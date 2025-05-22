@@ -1,0 +1,96 @@
+package com.barakah.fund.auth_service.security;
+
+import com.barakah.fund.auth_service.config.KeycloakConfig;
+import io.grpc.*;
+import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
+import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
+import org.keycloak.representations.AccessToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+
+@GrpcGlobalServerInterceptor
+public class GrpcAuthInterceptor implements ServerInterceptor {
+    private static final Logger logger = LoggerFactory.getLogger(GrpcAuthInterceptor.class);
+    private static final Context.Key<AccessToken> TOKEN_CONTEXT_KEY = Context.key("token");
+    private static final Metadata.Key<String> AUTHORIZATION_METADATA_KEY = Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
+    
+    @Value("${keycloak.realm}")
+    private String realm;
+    
+    @Value("${keycloak.auth-server-url}")
+    private String authServerUrl;
+    
+    private final KeycloakConfig keycloakConfig;
+
+    @Autowired
+    public GrpcAuthInterceptor(KeycloakConfig keycloakConfig) {
+        this.keycloakConfig = keycloakConfig;
+    }
+
+    @Override
+    public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+            ServerCall<ReqT, RespT> call, 
+            Metadata headers,
+            ServerCallHandler<ReqT, RespT> next) {
+        
+        // Get method name
+        String fullMethodName = call.getMethodDescriptor().getFullMethodName();
+        String methodName = fullMethodName.substring(fullMethodName.lastIndexOf('/') + 1);
+        
+        // Skip authentication for Register and Authenticate methods
+        if ("Register".equals(methodName) || "Authenticate".equals(methodName)) {
+            logger.info("Skipping authentication for public method: {}", methodName);
+            return next.startCall(call, headers);
+        }
+
+        // Extract token from metadata
+        String authHeader = headers.get(AUTHORIZATION_METADATA_KEY);
+        
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.error("Missing or invalid authorization header");
+            call.close(Status.UNAUTHENTICATED.withDescription("Missing or invalid authorization header"), headers);
+            return new ServerCall.Listener<ReqT>() {};
+        }
+        
+        String token = authHeader.substring(7); // Remove "Bearer " prefix
+        
+        try {
+            // Verify token
+            AccessToken accessToken = verifyToken(token);
+            
+            // Optional: Check specific permissions based on method
+            if ("ValidateToken".equals(methodName) && !hasAdminRole(accessToken)) {
+                logger.error("User lacks admin role for ValidateToken method");
+                call.close(Status.PERMISSION_DENIED.withDescription("Admin role required"), headers);
+                return new ServerCall.Listener<ReqT>() {};
+            }
+            
+            // Create context with token and proceed
+            Context context = Context.current().withValue(TOKEN_CONTEXT_KEY, accessToken);
+            return Contexts.interceptCall(context, call, headers, next);
+            
+        } catch (VerificationException e) {
+            logger.error("Token verification failed: {}", e.getMessage());
+            call.close(Status.UNAUTHENTICATED.withDescription("Invalid token"), headers);
+            return new ServerCall.Listener<ReqT>() {};
+        }
+    }
+    
+    private AccessToken verifyToken(String tokenString) throws VerificationException {
+        TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class);
+        verifier.withChecks(TokenVerifier.IS_ACTIVE);
+        // You should set the proper public key or certificate here
+        // verifier.publicKey(publicKey);
+        
+        return verifier.verify().getToken();
+    }
+    
+    private boolean hasAdminRole(AccessToken token) {
+        return token.getRealmAccess() != null && 
+               token.getRealmAccess().getRoles() != null &&
+               token.getRealmAccess().getRoles().contains("admin");
+    }
+}

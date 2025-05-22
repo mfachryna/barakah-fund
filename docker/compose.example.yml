@@ -1,0 +1,258 @@
+services:
+    postgres:
+        container_name: postgres
+        image: postgres:16-alpine
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-barakah}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB:-barakah}
+        ports:
+            - "${POSTGRES_PORT:-5432}:5432"
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+            - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+        networks:
+            - barakah-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-barakah}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    kafka:
+        image: bitnami/kafka:latest
+        container_name: kafka
+        ports:
+            - "${KAFKA_PORT:-9092}:9092"
+        environment:
+            KAFKA_ENABLE_KRAFT: yes
+            KAFKA_CFG_PROCESS_ROLES: broker,controller
+            KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+            KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+            KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+            KAFKA_CFG_BROKER_ID: 1
+            KAFKA_CFG_NODE_ID: 1
+            KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+            ALLOW_PLAINTEXT_LISTENER: yes
+            KAFKA_KRAFT_CLUSTER_ID: ${KAFKA_CLUSTER_ID:-MkU3OEVBNTcwNTJENDM2Qk}
+        volumes:
+            - kafka-data:/bitnami/kafka
+        networks:
+            - barakah-network
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "kafka-topics.sh --bootstrap-server kafka:9092 --list || exit 1",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    redis:
+        image: redis:alpine
+        container_name: redis
+        ports:
+            - "6379:6379"
+        networks:
+            - barakah-network
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 3
+
+    auth-service:
+        build:
+            context: ..
+            dockerfile: docker/Base.Dockerfile
+            args:
+                SERVICE_SRC: auth-service
+                EXPOSE_PORT: 6565
+        ports:
+            - "6565:6565"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - barakah-network
+        environment:
+            GRPC_PORT: 6565
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/barakah_auth
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-barakah}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+            JAVA_TOOL_OPTIONS: "-Xmx512m -Xms256m"
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:6565/actuator/health || exit 1",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    kafka-ui:
+        image: provectuslabs/kafka-ui:latest
+        ports:
+            - "127.0.0.1:${KAFKA_UI_PORT:-8081}:8080"  # Only accessible from localhost
+        environment:
+            KAFKA_CLUSTERS_0_NAME: barakah-cluster
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+        depends_on:
+            - kafka
+        networks:
+            - barakah-network
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8080/actuator/health || exit 1",  # Internal port
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    eureka-server:
+        image: openjdk:17-jdk-slim
+        container_name: eureka-server
+        depends_on:
+            - postgres
+        environment:
+            SPRING_PROFILES_ACTIVE: docker
+        ports:
+            - "8761:8761"
+        volumes:
+            - ../services/eureka-service:/app
+        working_dir: /app
+        command: ["java", "-jar", "target/eureka-service-0.0.1-SNAPSHOT.jar"]
+
+    config-server:
+        image: openjdk:17-jdk-slim
+        container_name: config-server
+        depends_on:
+            - postgres
+        environment:
+            SPRING_PROFILES_ACTIVE: native
+        ports:
+            - "8888:8888"
+        volumes:
+            - ../services/config-server:/app
+            - ../config-repo:/app/config-repo
+        working_dir: /app
+        command: ["java", "-jar", "target/config-server-0.0.1-SNAPSHOT.jar"]
+
+    pgadmin:
+        container_name: pgadmin
+        image: dpage/pgadmin4
+        ports:
+            - "127.0.0.1:${PGADMIN_PORT:-5050}:80"  # Only accessible from localhost
+        environment:
+            PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USER:-admin@example.com}
+            PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+        depends_on:
+            postgres:
+                condition: service_healthy
+        networks:
+            - barakah-network
+        volumes:
+            - ./servers.json.example:/pgadmin4/servers.json.template  # Use a template, not actual config
+        healthcheck:
+            test: ["CMD-SHELL", "wget -O /dev/null http://localhost:80/misc/ping || exit 1"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    keycloak-db:
+        container_name: keycloak-db
+        image: postgres:16-alpine
+        environment:
+            POSTGRES_DB: ${KEYCLOAK_DB:-keycloak}
+            POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+            POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+        volumes:
+            - keycloak-db-data:/var/lib/postgresql/data
+        networks:
+            - barakah-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    keycloak:
+        container_name: keycloak
+        image: quay.io/keycloak/keycloak:24.0
+        command: start-dev --import-realm
+        environment:
+            KC_DB: postgres
+            KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_DB:-keycloak}
+            KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+            KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+            KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+            KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+            KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-admin-cli}
+        ports:
+            - "${KEYCLOAK_PORT:-8080}:8080"
+        depends_on:
+            - keycloak-db
+        networks:
+            - barakah-network
+        volumes:
+            - ./barakah-realm.json:/opt/keycloak/data/import/barakah-realm.json
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8080/auth/realms/master/protocol/openid-connect/certs || exit 1",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    prometheus:
+        container_name: prometheus
+        image: prom/prometheus
+        ports:
+            - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"  # Only accessible from localhost
+        volumes:
+            - ./prometheus.yml.example:/etc/prometheus/prometheus.yml.template  # Use a template
+        networks:
+            - barakah-network
+        healthcheck:
+            test: ["CMD-SHELL", "wget -O /dev/null http://localhost:9090/-/healthy || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    grafana:
+        container_name: grafana
+        image: grafana/grafana
+        ports:
+            - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"  # Only accessible from localhost
+        environment:
+            GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}  # Set via env var
+        networks:
+            - barakah-network
+        healthcheck:
+            test: ["CMD-SHELL", "wget -O /dev/null http://localhost:3000/api/health || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    barakah-network:
+        name: barakah_fund_network
+    monitoring-network:
+        name: monitoring_network
+
+volumes:
+    postgres-data:
+    kafka-data:
+    keycloak-data:
+    keycloak-db-data:

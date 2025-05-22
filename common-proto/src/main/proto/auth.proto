@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package com.barakah.fund.proto.auth;
+
+import "shared.proto";
+import "validate/validate.proto";
+
+option java_multiple_files = true;
+option java_package = "com.barakah.fund.proto.auth";
+option java_outer_classname = "AuthProto";
+
+message RegisterRequest {
+  string username = 1 [(validate.rules).string = {min_len: 3, max_len: 32, pattern: "^[a-zA-Z0-9_]+$"}];
+  string email = 2 [(validate.rules).string.email = true];
+  string password = 3 [(validate.rules).string = {min_len: 8, max_len: 64}];
+  string phone_number = 4 [(validate.rules).string = {pattern: "^\\+?[1-9]\\d{1,14}$"}];
+  string full_name = 5 [(validate.rules).string = {min_len: 1, max_len: 64}];
+  com.barakah.fund.proto.shared.Role role = 6;
+}
+
+message AuthRequest {
+  string username = 1 [(validate.rules).string = {min_len: 3, max_len: 64}];
+  string password = 2 [(validate.rules).string = {min_len: 8, max_len: 64}];
+}
+
+message TokenRequest {
+  string refresh_token = 1 [(validate.rules).string = {min_len: 10}];
+}
+
+message AuthResponse {
+  bool success = 1;
+  string message = 2;
+  string user_id = 3;
+  string username = 4;
+  string role = 5;
+  string access_token = 6;
+  string refresh_token = 7;
+}
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (AuthResponse);
+  rpc Authenticate(AuthRequest) returns (AuthResponse);
+  rpc RefreshToken(TokenRequest) returns (AuthResponse);
+  rpc ValidateToken(TokenRequest) returns (AuthResponse);
+}
+

@@ -1,0 +1,46 @@
+{
+    "realm": "${KEYCLOAK_REALM}",
+    "enabled": true,
+    "defaultRole": {
+        "name": "user",
+        "description": "Default user role"
+    },
+    "clients": [
+        {
+            "clientId": "${CLIENT_ID}",
+            "name": "Authentication Service",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "${CLIENT_SECRET}",
+            "redirectUris": ["*"],
+            "webOrigins": ["+"],
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "authorizationServicesEnabled": true,
+            "publicClient": false,
+            "protocol": "openid-connect"
+        }
+    ],
+    "roles": {
+        "realm": [
+            {
+                "name": "user",
+                "description": "Regular user role"
+            },
+            {
+                "name": "admin", 
+                "description": "Admin user role"
+            },
+            {
+                "name": "investor",
+                "description": "Investor user role"
+            },
+            {
+                "name": "borrower",
+                "description": "Borrower user role"
+            }
+        ]
+    }
+}
