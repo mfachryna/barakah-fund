@@ -1,4 +1,5 @@
 version: '3.8'
+name: barakah-fund-dev
 
 services:
   config-server:
@@ -11,9 +12,14 @@ services:
     environment:
       - CONFIG_SERVER_USERNAME=config-user
       - CONFIG_SERVER_PASSWORD=config-pass
-      - CONFIG_GIT_URI=https://github.com/mfachryna/barakah-fund-config.git
-      - CONFIG_GIT_BRANCH=main
+      - SPRING_PROFILES_ACTIVE=native,security  # Explicit native profile
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=classpath:/config/,file:/app/config/
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=""  # Explicitly disable Git
+      - SPRING_CLOUD_CONFIG_SERVER_BOOTSTRAP=false
+      - SPRING_CLOUD_CONFIG_SERVER_ACCEPT_EMPTY=true
       - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      - ./config-repo:/app/config:ro  # Mount external config
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
       interval: 30s
@@ -23,9 +29,24 @@ services:
     networks:
       - barakah-network
     restart: unless-stopped
-    labels:
-      - "com.barakahfund.service=config-server"
-      - "com.barakahfund.version=1.0.0"
+
+  eureka-server:
+    build:
+      context: ../eureka-server
+      dockerfile: Dockerfile
+    container_name: barakah-eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - CONFIG_SERVER_URI=http://config-server:8888
+      - CONFIG_SERVER_USERNAME=config-user
+      - CONFIG_SERVER_PASSWORD=config-pass
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - barakah-network
 
 networks:
   barakah-network:

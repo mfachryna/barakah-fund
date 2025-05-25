@@ -1,4 +1,4 @@
-package com.barakahfund.config_server;
+package com.barakahfund.eureka_server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
@@ -10,11 +10,13 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-    "spring.cloud.config.server.git.uri=https://github.com/spring-cloud-samples/config-repo",
+    "eureka.client.register-with-eureka=false",
+    "eureka.client.fetch-registry=false",
+    "spring.cloud.config.enabled=false",
     "spring.security.user.name=test-user",
     "spring.security.user.password=test-pass"
 })
-class ConfigServerApplicationTests {
+class EurekaServerApplicationTests {
 
     @LocalServerPort
     private int port;
@@ -25,7 +27,7 @@ class ConfigServerApplicationTests {
     }
 
     @Test
-    void configServerIsRunning() {
+    void eurekaServerIsRunning() {
         assertThat(port).isNotZero();
     }
 }

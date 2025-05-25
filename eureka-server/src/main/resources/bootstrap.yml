@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: eureka-server
+  
+  cloud:
+    config:
+      uri: ${CONFIG_SERVER_URI:http://config-server:8888}
+      username: ${CONFIG_SERVER_USERNAME:config-user}
+      password: ${CONFIG_SERVER_PASSWORD:config-pass}
+      fail-fast: ${CONFIG_FAIL_FAST:true}
+      retry:
+        initial-interval: 2000
+        max-attempts: 6
+        max-interval: 10000
+        multiplier: 1.5
+      discovery:
+        enabled: false 
+
+---
+spring:
+  config:
+    activate:
+      on-profile: standalone
+  
+server:
+  port: 8761
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+    prefer-ip-address: false
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.config: INFO
+    com.netflix.eureka: INFO
+    com.barakahfund: DEBUG

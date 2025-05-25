@@ -1,0 +1,40 @@
+server:
+  port: 8761
+
+spring:
+  security:
+    user:
+      name: ${EUREKA_USERNAME:eureka-user}
+      password: ${EUREKA_PASSWORD:eureka-pass}
+      roles: EUREKA_ADMIN
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+    prefer-ip-address: false
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    enable-self-preservation: true
+    eviction-interval-timer-in-ms: 15000
+    response-cache-update-interval-ms: 5000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh,env,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    com.barakahfund: DEBUG
