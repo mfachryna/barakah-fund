@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  config-server:
+    build:
+      context: ../config-server
+      dockerfile: Dockerfile
+    container_name: barakah-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - CONFIG_SERVER_USERNAME=config-user
+      - CONFIG_SERVER_PASSWORD=config-pass
+      - CONFIG_GIT_URI=https://github.com/mfachryna/barakah-fund-config.git
+      - CONFIG_GIT_BRANCH=main
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - barakah-network
+    restart: unless-stopped
+    labels:
+      - "com.barakahfund.service=config-server"
+      - "com.barakahfund.version=1.0.0"
+
+networks:
+  barakah-network:
+    driver: bridge
+    name: barakah-network
+
+volumes:
+  config-data:
+    driver: local
