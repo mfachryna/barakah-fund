@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package barakah.auth.v1;
+
+option java_multiple_files = true;
+option java_package = "com.barakah.auth.proto.v1";
+
+import "validate/validate.proto";
+
+message LoginRequest {
+  string username = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._@-]{3,100}$",
+    min_len: 3,
+    max_len: 100
+  }];
+  
+  string password = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 128
+  }];
+}
+
+message LoginResponse {
+  bool success = 1;
+  
+  string access_token = 2 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+  
+  string refresh_token = 3 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+  
+  int64 expires_in = 4 [(validate.rules).int64 = {
+    gte: 0,
+    lte: 86400 
+  }];
+  
+  UserInfo user_info = 5;
+  
+  string message = 6 [(validate.rules).string = {
+    max_len: 200
+  }];
+}
+
+
+message RegisterRequest {
+  string username = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._-]{3,30}$",
+    min_len: 3,
+    max_len: 30
+  }];
+  
+  string email = 2 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+    max_len: 100
+  }];
+  
+  string password = 3 [(validate.rules).string = {
+    min_len: 8,
+    max_len: 128
+  }];
+  
+  string first_name = 4 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    max_len: 50
+  }];
+  
+  string last_name = 5 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    max_len: 50
+  }];
+  
+  string phone_number = 6 [(validate.rules).string = {
+    pattern: "^\\+[1-9]\\d{1,14}$",
+    max_len: 20
+  }];
+}
+
+message RegisterResponse {
+  bool success = 1;
+  UserInfo user_info = 2;
+  string message = 3 [(validate.rules).string = {
+    max_len: 200
+  }];
+  
+  
+  string access_token = 4;
+  string refresh_token = 5;
+  int64 expires_in = 6;
+}
+
+
+message ValidateTokenRequest {
+  string token = 1 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  UserInfo user_info = 2;
+  
+  string message = 3 [(validate.rules).string = {
+    max_len: 200
+  }];
+}
+
+
+message RefreshTokenRequest {
+  string refresh_token = 1 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+}
+
+message RefreshTokenResponse {
+  bool success = 1;
+  
+  string access_token = 2 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+  
+  string refresh_token = 3 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+  
+  int64 expires_in = 4 [(validate.rules).int64 = {
+    gte: 0,
+    lte: 86400
+  }];
+  
+  string message = 5 [(validate.rules).string = {
+    max_len: 200
+  }];
+}
+
+
+message UserInfo {
+  string user_id = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{8,50}$",
+    min_len: 8,
+    max_len: 50
+  }];
+  
+  string username = 2 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._-]{3,30}$",
+    min_len: 3,
+    max_len: 30
+  }];
+  
+  string email = 3 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+    max_len: 100
+  }];
+  
+  string first_name = 4 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    max_len: 50
+  }];
+  
+  string last_name = 5 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    max_len: 50
+  }];
+  
+  string role = 6 [(validate.rules).string = {
+    in: ["USER", "ADMIN", "MANAGER", "TELLER"]
+  }];
+  
+  string status = 7 [(validate.rules).string = {
+    in: ["ACTIVE", "INACTIVE", "SUSPENDED", "LOCKED"]
+  }];
+}
+
+
+message LogoutRequest {
+  string accessToken = 1 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+  string refreshToken = 2 [(validate.rules).string = {
+    min_len: 10,
+    max_len: 2000
+  }];
+}
+
+message LogoutResponse {
+  bool success = 1;
+  
+  string message = 2 [(validate.rules).string = {
+    max_len: 200
+  }];
+}
+
+service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}

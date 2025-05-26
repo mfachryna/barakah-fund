@@ -1,58 +1,172 @@
-version: '3.8'
+version: "3.8"
 name: barakah-fund-dev
 
 services:
-  config-server:
-    build:
-      context: ../config-server
-      dockerfile: Dockerfile
-    container_name: barakah-config-server
-    ports:
-      - "8888:8888"
-    environment:
-      - CONFIG_SERVER_USERNAME=config-user
-      - CONFIG_SERVER_PASSWORD=config-pass
-      - SPRING_PROFILES_ACTIVE=native,security  # Explicit native profile
-      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=classpath:/config/,file:/app/config/
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=""  # Explicitly disable Git
-      - SPRING_CLOUD_CONFIG_SERVER_BOOTSTRAP=false
-      - SPRING_CLOUD_CONFIG_SERVER_ACCEPT_EMPTY=true
-      - JAVA_OPTS=-Xmx512m -Xms256m
-    volumes:
-      - ./config-repo:/app/config:ro  # Mount external config
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    networks:
-      - barakah-network
-    restart: unless-stopped
+    postgres:
+        image: postgres:15-alpine
+        container_name: barakah-postgres
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_DB=barakah_main
+            - POSTGRES_USER=barakah_admin
+            - POSTGRES_PASSWORD=barakah_admin_pass
+            - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./init-scripts:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U barakah_admin -d barakah_main"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        networks:
+            - barakah-network
+        restart: unless-stopped
 
-  eureka-server:
-    build:
-      context: ../eureka-server
-      dockerfile: Dockerfile
-    container_name: barakah-eureka-server
-    ports:
-      - "8761:8761"
-    environment:
-      - CONFIG_SERVER_URI=http://config-server:8888
-      - CONFIG_SERVER_USERNAME=config-user
-      - CONFIG_SERVER_PASSWORD=config-pass
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      config-server:
-        condition: service_healthy
-    networks:
-      - barakah-network
+    keycloak:
+        image: quay.io/keycloak/keycloak:24.0.5
+        container_name: barakah-keycloak
+        ports:
+            - "8080:8080"
+        environment:
+            - KEYCLOAK_ADMIN=admin
+            - KEYCLOAK_ADMIN_PASSWORD=admin
+            - KC_DB=postgres
+            - KC_DB_URL=jdbc:postgresql://postgres:5432/barakah_main
+            - KC_DB_USERNAME=barakah_admin
+            - KC_DB_PASSWORD=barakah_admin_pass
+            - KC_HOSTNAME=localhost
+            - KC_HTTP_ENABLED=true
+            - KC_METRICS_ENABLED=true
+            - KC_HEALTH_ENABLED=true
+        command: start-dev --import-realm
+        volumes:
+            - ./barakah-realm.json:/opt/keycloak/data/import/barakah-realm.json
+        depends_on:
+            postgres:
+                condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8080/health/ready || exit 1",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    config-server:
+        build:
+            context: ../config-server
+            dockerfile: Dockerfile
+        container_name: barakah-config-server
+        ports:
+            - "8888:8888"
+        environment:
+            - CONFIG_SERVER_USERNAME=config-user
+            - CONFIG_SERVER_PASSWORD=config-pass
+            - SPRING_PROFILES_ACTIVE=native,security
+            - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=classpath:/config/,file:/app/config/
+            - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=""
+            - SPRING_CLOUD_CONFIG_SERVER_BOOTSTRAP=false
+            - SPRING_CLOUD_CONFIG_SERVER_ACCEPT_EMPTY=true
+            - JAVA_OPTS=-Xmx512m -Xms256m
+        volumes:
+            - ../config:/app/config:ro
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    eureka-server:
+        build:
+            context: ../eureka-server
+            dockerfile: Dockerfile
+        container_name: barakah-eureka-server
+        ports:
+            - "8761:8761"
+        environment:
+            - CONFIG_SERVER_URI=http://config-server:8888
+            - CONFIG_SERVER_USERNAME=config-user
+            - CONFIG_SERVER_PASSWORD=config-pass
+            - SPRING_PROFILES_ACTIVE=docker
+        depends_on:
+            config-server:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    user-service:
+        build:
+            context: ../user-service
+            dockerfile: Dockerfile
+        container_name: barakah-user-service
+        ports:
+            - "8081:8081"
+            - "9091:9091"
+        environment:
+            - CONFIG_SERVER_URI=http://config-server:8888
+            - CONFIG_SERVER_USERNAME=config-user
+            - CONFIG_SERVER_PASSWORD=config-pass
+            - SPRING_PROFILES_ACTIVE=docker
+            - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/barakah_users
+            - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080
+            - JAVA_OPTS=-Xmx1024m -Xms512m
+        volumes:
+            - user_service_logs:/app/logs
+        depends_on:
+            postgres:
+                condition: service_healthy
+            keycloak:
+                condition: service_healthy
+            config-server:
+                condition: service_healthy
+            eureka-server:
+                condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:8081/user-service/actuator/health",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 120s
+        networks:
+            - barakah-network
+        restart: unless-stopped
 
 networks:
-  barakah-network:
-    driver: bridge
-    name: barakah-network
+    barakah-network:
+        driver: bridge
+        name: barakah-network
 
 volumes:
-  config-data:
-    driver: local
+    postgres_data:
+        driver: local
+    config_data:
+        driver: local
+    user_service_logs:
+        driver: local

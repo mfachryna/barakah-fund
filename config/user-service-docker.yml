@@ -1,0 +1,23 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://postgres:5432/barakah_users
+
+grpc:
+    server:
+        port: 9091
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://eureka-server:8761/eureka/
+    instance:
+        hostname: user-service
+
+keycloak:
+    auth-server-url: http://keycloak:8080
+
+logging:
+    level:
+        com.barakah: INFO
+    file:
+        name: /app/logs/user-service.log

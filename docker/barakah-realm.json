@@ -1,0 +1,40 @@
+{
+    "realm": "barakah",
+    "enabled": true,
+    "revokeRefreshToken": true,
+    "refreshTokenMaxReuse": 0,
+    "defaultRole": {
+        "name": "USER",
+        "description": "Default user role"
+    },
+    "clients": [
+        {
+            "clientId": "user-service",
+            "name": "User Service",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "your-client-secret-here-change-me",
+            "redirectUris": ["*"],
+            "webOrigins": ["+"],
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "authorizationServicesEnabled": true,
+            "publicClient": false,
+            "protocol": "openid-connect"
+        }
+    ],
+    "roles": {
+        "realm": [
+            {
+                "name": "USER",
+                "description": "Regular user role"
+            },
+            {
+                "name": "ADMIN",
+                "description": "Admin user role"
+            }
+        ]
+    }
+}

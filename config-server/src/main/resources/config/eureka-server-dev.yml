@@ -1,0 +1,15 @@
+spring:
+  security:
+    user:
+      name: dev-eureka
+      password: dev-pass
+
+eureka:
+  server:
+    enable-self-preservation: false  # Disable for development
+
+logging:
+  level:
+    com.netflix.eureka: DEBUG
+    com.netflix.discovery: DEBUG
+    root: INFO

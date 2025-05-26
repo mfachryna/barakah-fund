@@ -1,0 +1,11 @@
+keycloak:
+    auth-server-url: http://localhost:8080
+    realm: barakah
+    resource: user-service
+    credentials:
+        secret: user-service-secret
+
+    admin:
+        username: admin
+        password: admin
+        client-id: admin-cli

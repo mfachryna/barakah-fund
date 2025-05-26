@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package barakah.common.v1;
+
+option java_multiple_files = true;
+option java_package = "com.barakah.common.proto.v1";
+
+import "validate/validate.proto";
+
+enum Status {
+  STATUS_ACTIVE = 0;
+  STATUS_INACTIVE = 1;
+  STATUS_SUSPENDED = 2;
+  STATUS_DELETED = 3;
+}
+
+message PageRequest {
+  int32 page = 1 [(validate.rules).int32 = {
+    gte: 0,
+    lte: 10000
+  }];
+  
+  int32 size = 2 [(validate.rules).int32 = {
+    gte: 1,
+    lte: 1000
+  }];
+  
+  string sort = 3 [(validate.rules).string = {
+    pattern: "^[a-zA-Z_][a-zA-Z0-9_]{0,49}$",
+    max_len: 50
+  }];
+  
+  string direction = 4 [(validate.rules).string = {
+    in: ["ASC", "DESC", "asc", "desc"]
+  }];
+}
+
+message PageResponse {
+  int32 page = 1 [(validate.rules).int32 = {
+    gte: 0
+  }];
+  
+  int32 size = 2 [(validate.rules).int32 = {
+    gte: 0,
+    lte: 1000
+  }];
+  
+  int64 total_elements = 3 [(validate.rules).int64 = {
+    gte: 0
+  }];
+  
+  int32 total_pages = 4 [(validate.rules).int32 = {
+    gte: 0
+  }];
+  
+  bool first = 5;
+  bool last = 6;
+}
+
+message AuditInfo {
+  string created_by = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string created_at = 2 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+  
+  string updated_by = 3 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string updated_at = 4 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+}
+
+message GenericResponse {
+  bool success = 1;
+  
+  string message = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 500
+  }];
+  
+  string code = 3 [(validate.rules).string = {
+    pattern: "^[A-Z0-9_]{1,50}$",
+    max_len: 50
+  }];
+}
+
+message ErrorDetail {
+  string field = 1 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 100
+  }];
+  
+  string message = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 200
+  }];
+  
+  string code = 3 [(validate.rules).string = {
+    pattern: "^[A-Z0-9_]{1,50}$",
+    max_len: 50
+  }];
+}
+
+message ValidationResponse {
+  bool valid = 1;
+  
+  repeated ErrorDetail errors = 2 [(validate.rules).repeated = {
+    max_items: 100
+  }];
+}

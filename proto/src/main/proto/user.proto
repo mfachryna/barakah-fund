@@ -1,0 +1,304 @@
+syntax = "proto3";
+
+package barakah.user.v1;
+
+option java_multiple_files = true;
+option java_package = "com.barakah.user.proto.v1";
+
+import "validate/validate.proto";
+import "common.proto";
+
+message User {
+  string user_id = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{8,50}$",
+    min_len: 8,
+    max_len: 50
+  }];
+  
+  string username = 2 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._-]{3,30}$",
+    min_len: 3,
+    max_len: 30
+  }];
+  
+  string email = 3 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+    max_len: 100
+  }];
+  
+  string first_name = 4 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string last_name = 5 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string phone_number = 6 [(validate.rules).string = {
+    pattern: "^\\+?[1-9]\\d{1,14}$",
+    max_len: 20
+  }];
+  
+  string date_of_birth = 7 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+  
+  string address = 8 [(validate.rules).string = {
+    max_len: 500
+  }];
+  
+  UserStatus status = 9 [(validate.rules).enum = {
+    defined_only: true
+  }];
+  
+  UserRole role = 10 [(validate.rules).enum = {
+    defined_only: true
+  }];
+  
+  bool email_verified = 11;
+  
+  string created_at = 12 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+  
+  string updated_at = 13 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+  
+  string last_login = 14 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+}
+
+enum UserStatus {
+  USER_STATUS_ACTIVE = 0;
+  USER_STATUS_INACTIVE = 1;
+  USER_STATUS_SUSPENDED = 2;
+  USER_STATUS_LOCKED = 3;
+}
+
+enum UserRole {
+  USER_ROLE_USER = 0;
+  USER_ROLE_ADMIN = 1;
+  USER_ROLE_MANAGER = 2;
+  USER_ROLE_TELLER = 3;
+}
+
+message CreateUserRequest {
+  string username = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._-]{3,30}$",
+    min_len: 3,
+    max_len: 30
+  }];
+  
+  string email = 2 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+    max_len: 100
+  }];
+  
+  string first_name = 3 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string last_name = 4 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string password = 5 [(validate.rules).string = {
+    min_len: 8,
+    max_len: 128,
+    pattern: "^[A-Za-z0-9@$!%*?&]{8,128}$"
+  }];
+  
+  string phone_number = 6 [(validate.rules).string = {
+    pattern: "^\\+?[1-9]\\d{1,14}$",
+    max_len: 20
+  }];
+  
+  string date_of_birth = 7 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+  
+  string address = 8 [(validate.rules).string = {
+    max_len: 500
+  }];
+  
+  UserRole role = 9 [(validate.rules).enum = {
+    defined_only: true
+  }];
+}
+
+message CreateUserResponse {
+  User user = 1 [(validate.rules).message.required = true];
+  string message = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 200
+  }];
+}
+
+message GetUserRequest {
+  string user_id = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{8,50}$",
+    min_len: 8,
+    max_len: 50
+  }];
+}
+
+message GetUserResponse {
+  User user = 1 [(validate.rules).message.required = true];
+}
+
+message GetUserByUsernameRequest {
+  string username = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._-]{3,30}$",
+    min_len: 3,
+    max_len: 30
+  }];
+}
+
+message GetUserByUsernameResponse {
+  User user = 1 [(validate.rules).message.required = true];
+}
+
+message GetUserByEmailRequest {
+  string email = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+    max_len: 100
+  }];
+}
+
+message GetUserByEmailResponse {
+  User user = 1 [(validate.rules).message.required = true];
+}
+
+message ListUsersRequest {
+  barakah.common.v1.PageRequest page_request = 1;
+  UserStatus status_filter = 2 [(validate.rules).enum = {
+    defined_only: true
+  }];
+}
+
+message ListUsersResponse {
+  repeated User users = 1 [(validate.rules).repeated = {
+    max_items: 1000
+  }];
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+message SearchUsersRequest {
+  string search_term = 1 [(validate.rules).string = {
+    min_len: 2,
+    max_len: 50,
+    pattern: "^[a-zA-Z0-9\\s._@-]+$"
+  }];
+  barakah.common.v1.PageRequest page_request = 2;
+}
+
+message SearchUsersResponse {
+  repeated User users = 1 [(validate.rules).repeated = {
+    max_items: 1000
+  }];
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+message UpdateUserRequest {
+  string user_id = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{8,50}$",
+    min_len: 8,
+    max_len: 50
+  }];
+  
+  string email = 2 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+    max_len: 100
+  }];
+  
+  string first_name = 3 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string last_name = 4 [(validate.rules).string = {
+    pattern: "^[a-zA-Z\\s]{1,50}$",
+    min_len: 1,
+    max_len: 50
+  }];
+  
+  string phone_number = 5 [(validate.rules).string = {
+    pattern: "^\\+?[1-9]\\d{1,14}$",
+    max_len: 20
+  }];
+  
+  string date_of_birth = 6 [(validate.rules).string = {
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+  }];
+  
+  string address = 7 [(validate.rules).string = {
+    max_len: 500
+  }];
+}
+
+message UpdateUserResponse {
+  User user = 1 [(validate.rules).message.required = true];
+  string message = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 200
+  }];
+}
+
+message UpdateUserStatusRequest {
+  string user_id = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{8,50}$",
+    min_len: 8,
+    max_len: 50
+  }];
+  
+  UserStatus status = 2 [(validate.rules).enum = {
+    defined_only: true
+  }];
+}
+
+message UpdateUserStatusResponse {
+  bool success = 1;
+  string message = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 200
+  }];
+}
+
+message DeleteUserRequest {
+  string user_id = 1 [(validate.rules).string = {
+    pattern: "^[a-zA-Z0-9-_]{8,50}$",
+    min_len: 8,
+    max_len: 50
+  }];
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 200
+  }];
+}
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse);
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (GetUserByEmailResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}

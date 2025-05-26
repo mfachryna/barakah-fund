@@ -1,0 +1,187 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://localhost:5432/barakah_users
+        username: barakah_user
+        password: barakah_password
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            maximum-pool-size: 10
+            minimum-idle: 5
+            connection-timeout: 20000
+            idle-timeout: 300000
+            max-lifetime: 1200000
+    cloud:
+        config:
+            enabled: false
+            discovery:
+                enabled: false
+
+        discovery:
+            nabled: false
+
+        service-registry:
+            auto-registration:
+                enabled: false
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+            naming:
+                physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                show_sql: true
+                format_sql: true
+                use_sql_comments: true
+                jdbc:
+                    batch_size: 20
+                order_inserts: true
+                order_updates: true
+        show-sql: true
+        open-in-view: false
+
+    flyway:
+        enabled: true
+        baseline-on-migrate: true
+        locations: classpath:db/migration
+
+    transaction:
+        default-timeout: 30
+    cache:
+        type: simple
+    redis:
+        host: localhost
+        port: 6379
+        timeout: 2000ms
+        database: 0
+
+server:
+    port: 8081
+    servlet:
+        context-path: /user-service
+    error:
+        include-message: always
+        include-binding-errors: always
+        include-stacktrace: on_param
+
+grpc:
+    server:
+        port: 9091
+        enable-reflection: true
+        max-inbound-message-size: 4MB
+        max-outbound-message-size: 4MB
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://localhost:8761/eureka/
+        register-with-eureka: true
+        fetch-registry: true
+        healthcheck:
+            enabled: true
+        initial-instance-info-replication-interval-seconds: 5
+        instance-info-replication-interval-seconds: 5
+    instance:
+        prefer-ip-address: true
+        hostname: localhost
+        lease-renewal-interval-in-seconds: 5
+        lease-expiration-duration-in-seconds: 10
+        metadata-map:
+            grpc.port: 9091
+            management.context-path: /user-service/actuator
+
+keycloak:
+    auth-server-url: http://localhost:8080
+    realm: barakah
+    resource: user-service
+    credentials:
+        secret: your-client-secret-here-change-me
+
+    admin:
+        username: admin
+        password: admin
+        client-id: admin-cli
+
+    mock:
+        enabled: true
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics,prometheus,flyway,liquibase
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: always
+            show-components: always
+        metrics:
+            enabled: true
+    health:
+        eureka:
+            enabled: true
+        db:
+            enabled: true
+    metrics:
+        export:
+            prometheus:
+                enabled: true
+
+logging:
+    level:
+        com.barakah: DEBUG
+        com.barakah.user: TRACE
+        com.barakah.auth: DEBUG
+        org.springframework.security: DEBUG
+        org.springframework.web: DEBUG
+        org.springframework.transaction: DEBUG
+        org.keycloak: DEBUG
+        org.hibernate.SQL: DEBUG
+        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+        net.devh.boot.grpc: DEBUG
+        io.grpc: INFO
+        org.flywaydb: INFO
+    pattern:
+        console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+        file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file:
+        name: logs/user-service-dev.log
+        max-size: 10MB
+        max-history: 30
+
+app:
+    security:
+        cors:
+            allowed-origins: "http://localhost:3000,http://localhost:4200,http://localhost:8080"
+            allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+        jwt:
+            secret: dev-secret-key-change-in-production
+            expiration: 86400000
+
+    user:
+        default-role: USER
+        password:
+            min-length: 8
+            require-special-chars: true
+        registration:
+            email-verification-required: false
+            auto-approve: true
+
+    services:
+        auth-service:
+            url: http://localhost:8082
+            timeout: 5000
+        notification-service:
+            url: http://localhost:8083
+            timeout: 3000
+
+features:
+    email-verification: false
+    sms-verification: false
+    audit-logging: true
+    rate-limiting: false
+    cache-enabled: false
