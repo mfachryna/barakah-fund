@@ -8,10 +8,10 @@ option java_package = "com.barakah.common.proto.v1";
 import "validate/validate.proto";
 
 enum Status {
-  STATUS_ACTIVE = 0;
-  STATUS_INACTIVE = 1;
-  STATUS_SUSPENDED = 2;
-  STATUS_DELETED = 3;
+  ACTIVE = 0;
+  INACTIVE = 1;
+  SUSPENDED = 2;
+  DELETED = 3;
 }
 
 message PageRequest {
@@ -116,4 +116,7 @@ message ValidationResponse {
   repeated ErrorDetail errors = 2 [(validate.rules).repeated = {
     max_items: 100
   }];
+}
+message Empty {
+  
 }

@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package barakah.account.v1;
+
+option java_multiple_files = true;
+option java_package = "com.barakah.account.proto.v1";
+
+import "common.proto";
+
+
+enum AccountType {
+  SAVINGS = 0;
+  SPENDING = 1;
+}
+
+
+message Account {
+  string account_id = 1;
+  string account_number = 2;
+  string user_id = 3;
+  AccountType account_type = 4;
+  barakah.common.v1.Status status = 5;
+  int64 balance = 6;
+  string account_name = 7;
+  barakah.common.v1.AuditInfo audit_info = 8;
+}
+
+
+message CreateAccountRequest {
+  string user_id = 1;
+  AccountType account_type = 2;
+  string account_name = 3;
+  int64 initial_deposit = 4;
+}
+
+message CreateAccountResponse {
+  Account account = 1;
+  string message = 2;
+}
+
+
+message GetAccountRequest {
+  string account_id = 1;
+}
+
+message GetAccountByNumberRequest {
+  string number = 1;
+}
+
+message GetAccountResponse {
+  Account account = 1;
+}
+
+
+message ListAccountsRequest {
+  string user_id = 1;
+  barakah.common.v1.PageRequest page_request = 2;
+}
+
+message ListAccountsResponse {
+  repeated Account accounts = 1;
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+
+message GetBalanceRequest {
+  string account_number = 1;
+}
+
+message GetBalanceResponse {
+  int64 balance = 1;
+}
+
+message UpdateBalanceRequest {
+  string account_number = 1;
+  int64 amount = 2;
+  string operation = 3;
+  string transaction_id = 4;
+}
+
+message UpdateBalanceResponse {
+  bool success = 1;
+  int64 new_balance = 2;
+  string message = 3;
+}
+
+message DebitAccountRequest {
+  string account_id = 1;
+  int64 amount = 2;
+  string transaction_id = 3;
+  string description = 4;
+  string reference = 5;
+}
+
+message DebitAccountResponse {
+  bool success = 1;
+  string message = 2;
+  int64 previous_balance = 3;
+  int64 new_balance = 4;
+  string transaction_reference = 5;
+}
+
+
+message CreditAccountRequest {
+  string account_id = 1;
+  int64 amount = 2;
+  string transaction_id = 3;
+  string description = 4;
+  string reference = 5;
+}
+
+message CreditAccountResponse {
+  bool success = 1;
+  string message = 2;
+  int64 previous_balance = 3;
+  int64 new_balance = 4;
+  string transaction_reference = 5;
+}
+
+
+message CheckAccountAccessRequest {
+  string account_id = 1;
+  string user_id = 2;
+}
+
+message CheckAccountAccessResponse {
+  bool has_access = 1;
+  string access_level = 2; 
+  string message = 3;
+}
+
+
+message ValidateAccountRequest {
+  string account_id = 1;
+  int64 transaction_amount = 2;
+  string operation_type = 3; 
+}
+
+message ValidateAccountResponse {
+  bool is_valid = 1;
+  bool is_active = 2;
+  bool has_sufficient_balance = 3;
+  bool within_limits = 4;
+  string message = 5;
+  repeated string validation_errors = 6;
+}
+
+service AccountService {
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse);
+  rpc GetAccountByNumber(GetAccountByNumberRequest) returns (GetAccountResponse);
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+  rpc UpdateBalance(UpdateBalanceRequest) returns (UpdateBalanceResponse);
+  rpc DebitAccount(DebitAccountRequest) returns (DebitAccountResponse);
+  rpc CreditAccount(CreditAccountRequest) returns (CreditAccountResponse);
+  rpc CheckAccountAccess(CheckAccountAccessRequest) returns (CheckAccountAccessResponse);
+  rpc ValidateAccount(ValidateAccountRequest) returns (ValidateAccountResponse);
+}

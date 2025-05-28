@@ -21,8 +21,8 @@ public class GrpcConfig {
             ((ServerBuilder<?>) serverBuilder).keepAliveTime(30, TimeUnit.SECONDS)
                     .keepAliveTimeout(5, TimeUnit.SECONDS)
                     .permitKeepAliveWithoutCalls(true)
-                    .maxInboundMessageSize(4 * 1024 * 1024) // 4MB
-                    .maxInboundMetadataSize(8192); // 8KB
+                    .maxInboundMessageSize(4 * 1024 * 1024)
+                    .maxInboundMetadataSize(8192);
         }
     }
 

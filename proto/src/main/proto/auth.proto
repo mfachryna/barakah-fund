@@ -5,6 +5,7 @@ package barakah.auth.v1;
 option java_multiple_files = true;
 option java_package = "com.barakah.auth.proto.v1";
 
+import "user.proto";
 import "validate/validate.proto";
 
 message LoginRequest {
@@ -38,7 +39,7 @@ message LoginResponse {
     lte: 86400 
   }];
   
-  UserInfo user_info = 5;
+  barakah.user.v1.User user_info = 5;
   
   string message = 6 [(validate.rules).string = {
     max_len: 200
@@ -72,6 +73,16 @@ message RegisterRequest {
     pattern: "^[a-zA-Z\\s]{1,50}$",
     max_len: 50
   }];
+
+  string date_of_birth = 7 [(validate.rules).string = {
+    pattern: "^\\d{2}-\\d{2}-\\d{4}$"
+  }];
+  
+  string address = 8 [(validate.rules).string = {
+    max_len: 500
+  }];
+
+  bool email_verified = 11;
   
   string phone_number = 6 [(validate.rules).string = {
     pattern: "^\\+[1-9]\\d{1,14}$",
@@ -81,11 +92,10 @@ message RegisterRequest {
 
 message RegisterResponse {
   bool success = 1;
-  UserInfo user_info = 2;
+  barakah.user.v1.User user_info = 2;
   string message = 3 [(validate.rules).string = {
     max_len: 200
   }];
-  
   
   string access_token = 4;
   string refresh_token = 5;
@@ -102,7 +112,7 @@ message ValidateTokenRequest {
 
 message ValidateTokenResponse {
   bool valid = 1;
-  UserInfo user_info = 2;
+  barakah.user.v1.User user_info = 2;
   
   string message = 3 [(validate.rules).string = {
     max_len: 200
@@ -137,44 +147,6 @@ message RefreshTokenResponse {
   
   string message = 5 [(validate.rules).string = {
     max_len: 200
-  }];
-}
-
-
-message UserInfo {
-  string user_id = 1 [(validate.rules).string = {
-    pattern: "^[a-zA-Z0-9-_]{8,50}$",
-    min_len: 8,
-    max_len: 50
-  }];
-  
-  string username = 2 [(validate.rules).string = {
-    pattern: "^[a-zA-Z0-9._-]{3,30}$",
-    min_len: 3,
-    max_len: 30
-  }];
-  
-  string email = 3 [(validate.rules).string = {
-    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
-    max_len: 100
-  }];
-  
-  string first_name = 4 [(validate.rules).string = {
-    pattern: "^[a-zA-Z\\s]{1,50}$",
-    max_len: 50
-  }];
-  
-  string last_name = 5 [(validate.rules).string = {
-    pattern: "^[a-zA-Z\\s]{1,50}$",
-    max_len: 50
-  }];
-  
-  string role = 6 [(validate.rules).string = {
-    in: ["USER", "ADMIN", "MANAGER", "TELLER"]
-  }];
-  
-  string status = 7 [(validate.rules).string = {
-    in: ["ACTIVE", "INACTIVE", "SUSPENDED", "LOCKED"]
   }];
 }
 

@@ -1,0 +1,5 @@
+CREATE INDEX idx_balance_history_account_operation_timestamp ON account_balance_history(account_id, operation, timestamp);
+CREATE INDEX idx_balance_history_transaction_operation ON account_balance_history(transaction_id, operation);
+
+CREATE INDEX idx_balance_history_timestamp_account ON account_balance_history(timestamp, account_id);
+CREATE INDEX idx_balance_history_account_number_timestamp ON account_balance_history(account_number, timestamp);
