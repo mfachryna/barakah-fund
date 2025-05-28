@@ -1,4 +1,4 @@
-package com.barakah.auth.context;
+package com.barakah.shared.context;
 
 public class UserContextHolder {
     private static final ThreadLocal<UserContext> CONTEXT = new ThreadLocal<>();

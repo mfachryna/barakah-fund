@@ -1,6 +1,6 @@
 package com.barakah.user.service;
 
-import com.barakah.user.entity.UserRole;
+import com.barakah.user.exception.KeycloakExceptions;
 import com.barakah.user.proto.v1.CreateUserRequest;
 import com.barakah.user.proto.v1.UpdateUserRequest;
 import org.keycloak.admin.client.Keycloak;
@@ -18,8 +18,11 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class KeycloakUserService {
@@ -70,37 +73,39 @@ public class KeycloakUserService {
         }
     }
 
-    public String createUser(String username, String email, String firstName, String lastName, String password) {
+    public String createUser(CreateUserRequest userData) {
         try {
             UserRepresentation user = new UserRepresentation();
-            user.setUsername(username);
-            user.setEmail(email);
-            user.setFirstName(firstName);
-            user.setLastName(lastName);
+            user.setUsername(userData.getUsername());
+            user.setEmail(userData.getEmail());
+            user.setFirstName(userData.getFirstName());
+            user.setLastName(userData.getLastName());
             user.setEnabled(true);
             user.setEmailVerified(false);
 
+            Map<String, List<String>> attributes = new HashMap<>();
             UsersResource usersResource = realmResource.users();
             jakarta.ws.rs.core.Response response = usersResource.create(user);
 
             if (response.getStatus() == 201) {
-
                 String location = response.getLocation().getPath();
                 String userId = location.substring(location.lastIndexOf('/') + 1);
 
-                setUserPassword(userId, password, false);
+                setUserPassword(userId, userData.getPassword(), false);
 
-                log.info("User created in Keycloak: {} with ID: {}", username, userId);
+                log.info("User created in Keycloak: {} with ID: {}", userData.getUsername(), userId);
                 return userId;
             } else {
-                String errorMsg = String.format("Failed to create user in Keycloak. Status: %d", response.getStatus());
-                log.error(errorMsg);
-                throw new RuntimeException(errorMsg);
+                throw new KeycloakExceptions.KeycloakInvalidResponseException(
+                    response.getStatus(), "user creation");
             }
 
+        } catch (KeycloakExceptions.KeycloakInvalidResponseException e) {
+            throw e; 
         } catch (Exception e) {
             log.error("Error creating user in Keycloak: {}", e.getMessage());
-            throw new RuntimeException("Failed to create user in Keycloak", e);
+            throw new KeycloakExceptions.KeycloakUserCreationException(
+                userData.getUsername(), e.getMessage());
         }
     }
 
@@ -118,7 +123,7 @@ public class KeycloakUserService {
 
         } catch (Exception e) {
             log.error("Error updating user in Keycloak: {}", e.getMessage());
-            throw new RuntimeException("Failed to update user in Keycloak", e);
+            throw new KeycloakExceptions.KeycloakUserUpdateException(keycloakId, e.getMessage());
         }
     }
 
@@ -152,8 +157,7 @@ public class KeycloakUserService {
 
         } catch (Exception e) {
             log.error("Error assigning role to user: {}", e.getMessage());
-
-            log.warn("Continuing without role assignment");
+            throw new KeycloakExceptions.KeycloakRoleException(keycloakId, roleName, "assign");
         }
     }
 
@@ -195,7 +199,7 @@ public class KeycloakUserService {
 
         } catch (Exception e) {
             log.error("Error deleting user from Keycloak: {}", e.getMessage());
-            throw new RuntimeException("Failed to delete user from Keycloak", e);
+            throw new KeycloakExceptions.KeycloakUserDeletionException(keycloakId, e.getMessage());
         }
     }
 

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -38,7 +39,7 @@ public class CreateUserRequest {
     @Size(max = 15, message = "Phone number must not exceed 15 characters")
     private String phoneNumber;
     
-    private LocalDateTime dateOfBirth;
+    private LocalDate dateOfBirth;
     
     @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;

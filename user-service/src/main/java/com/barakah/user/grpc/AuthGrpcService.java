@@ -2,303 +2,275 @@ package com.barakah.user.grpc;
 
 import com.barakah.auth.proto.v1.*;
 import com.barakah.user.proto.v1.*;
-import com.barakah.common.proto.v1.*;
-import com.barakah.auth.service.KeycloakAuthService;
+import com.barakah.shared.service.KeycloakAuthService;
 import com.barakah.user.service.UserService;
 import com.barakah.user.dto.UserResponse;
 import net.devh.boot.grpc.server.service.GrpcService;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
+
+@Slf4j
 @GrpcService
+@RequiredArgsConstructor
 public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthGrpcService.class);
-
     private final KeycloakAuthService keycloakAuthService;
-
     private final UserService userService;
-
-    public AuthGrpcService(KeycloakAuthService keycloakAuthService, UserService userService) {
-        this.keycloakAuthService = keycloakAuthService;
-        this.userService = userService;
-    }
 
     @Override
     public void login(LoginRequest request, StreamObserver<LoginResponse> responseObserver) {
-        try {
-            log.info("Login attempt for user: {}", request.getUsername());
+        log.info("Login attempt for user: {}", request.getUsername());
 
-            KeycloakAuthService.AuthenticationResult authResult = keycloakAuthService.login(
-                    request.getUsername(), request.getPassword());
-
-            if (authResult.isSuccess()) {
-
-                UserResponse user = null;
-                try {
-                    user = userService.getUserByUsername(request.getUsername());
-                    userService.updateLastLogin(user.getUserId());
-                } catch (Exception e) {
-                    log.warn("Could not update last login for user {}: {}", request.getUsername(), e.getMessage());
-                }
-
-                UserInfo.Builder userInfoBuilder = UserInfo.newBuilder();
-                if (authResult.getUserContext() != null) {
-                    var userContext = authResult.getUserContext();
-                    userInfoBuilder
-                            .setUserId(user.getUserId())
-                            .setUsername(user.getUsername())
-                            .setEmail(user.getEmail() != null ? user.getEmail() : "")
-                            .setFirstName(user.getFirstName() != null ? user.getFirstName() : "")
-                            .setLastName(user.getLastName() != null ? user.getLastName() : "")
-                            .setRole(userContext.getRoles().contains("ADMIN") ? "ADMIN" : "USER")
-                            .setStatus("ACTIVE");
-                }
-
-                LoginResponse response = LoginResponse.newBuilder()
-                        .setSuccess(true)
-                        .setAccessToken(authResult.getAccessToken())
-                        .setRefreshToken(authResult.getRefreshToken())
-                        .setExpiresIn(authResult.getExpiresIn())
-                        .setUserInfo(userInfoBuilder.build())
-                        .setMessage("Login successful")
-                        .build();
-
-                responseObserver.onNext(response);
-                responseObserver.onCompleted();
-
-                log.info("User logged in successfully: {}", request.getUsername());
-
-            } else {
-                LoginResponse response = LoginResponse.newBuilder()
-                        .setSuccess(false)
-                        .setAccessToken("")
-                        .setMessage(authResult.getErrorMessage())
-                        .build();
-
-                responseObserver.onNext(response);
-                responseObserver.onCompleted();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Login failed for user {}: {}", request.getUsername(), e.getMessage());
-            responseObserver.onError(Status.UNAUTHENTICATED
-                    .withDescription("Login failed")
-                    .asRuntimeException());
+        if (request.getUsername().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
         }
+        if (request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
+        KeycloakAuthService.AuthenticationResult authResult = keycloakAuthService.login(
+                request.getUsername(), request.getPassword());
+
+        if (!authResult.isSuccess()) {
+
+            throw new SecurityException(authResult.getErrorMessage());
+        }
+
+        UserResponse user = userService.getUserByUsername(request.getUsername());
+        
+        try {
+            userService.updateLastLoginByKeycloakId(user.getKeycloakId());
+        } catch (Exception e) {
+            log.warn("Could not update last login for user {}: {}", request.getUsername(), e.getMessage());
+        }
+
+        User.Builder userBuilder = User.newBuilder();
+        if (authResult.getUserContext() != null) {
+            var userContext = authResult.getUserContext();
+            userBuilder
+                    .setUserId(user.getUserId())
+                    .setUsername(user.getUsername())
+                    .setEmail(user.getEmail() != null ? user.getEmail() : "")
+                    .setFirstName(user.getFirstName() != null ? user.getFirstName() : "")
+                    .setLastName(user.getLastName() != null ? user.getLastName() : "")
+                    .setRole(userContext.getRoles().contains("ADMIN") ? UserRole.ADMIN : UserRole.USER)
+                    .setStatus(user.getStatus().toString().equals("ACTIVE") ? UserStatus.ACTIVE : UserStatus.INACTIVE);
+        }
+
+        LoginResponse response = LoginResponse.newBuilder()
+                .setSuccess(true)
+                .setAccessToken(authResult.getAccessToken())
+                .setRefreshToken(authResult.getRefreshToken())
+                .setExpiresIn(authResult.getExpiresIn())
+                .setUserInfo(userBuilder.build())
+                .setMessage("Login successful")
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+
+        log.info("User logged in successfully: {}", request.getUsername());
     }
 
     @Override
     public void validateToken(ValidateTokenRequest request, StreamObserver<ValidateTokenResponse> responseObserver) {
-        try {
-            KeycloakAuthService.ValidationResult validationResult = keycloakAuthService.validateToken(request.getToken(), "access_token");
-
-            ValidateTokenResponse.Builder responseBuilder = ValidateTokenResponse.newBuilder()
-                    .setValid(validationResult.isValid());
-
-            if (validationResult.isValid()) {
-                var userContext = validationResult.getUserContext();
-
-                UserInfo userInfo = UserInfo.newBuilder()
-                        .setUserId(userContext.getUserId())
-                        .setUsername(userContext.getUsername())
-                        .setEmail(userContext.getEmail() != null ? userContext.getEmail() : "")
-                        .setFirstName(userContext.getFirstName() != null ? userContext.getFirstName() : "")
-                        .setLastName(userContext.getLastName() != null ? userContext.getLastName() : "")
-                        .setRole(userContext.getRoles().contains("ADMIN") ? "ADMIN" : "USER")
-                        .setStatus("ACTIVE")
-                        .build();
-
-                responseBuilder.setUserInfo(userInfo).setMessage("Token is valid");
-            } else {
-                responseObserver.onError(Status.UNAUTHENTICATED
-                        .withDescription(validationResult.getErrorMessage())
-                        .asException());
-            }
-
-            responseObserver.onNext(responseBuilder.build());
-            responseObserver.onCompleted();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Token validation error: {}", e.getMessage());
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("Token validation failed")
-                    .asException());
-            responseObserver.onCompleted();
+        if (request.getToken().isEmpty()) {
+            throw new IllegalArgumentException("Token is required");
         }
+
+        KeycloakAuthService.ValidationResult validationResult = keycloakAuthService.validateToken(
+                request.getToken(), "access_token");
+
+        if (!validationResult.isValid()) {
+
+            throw new SecurityException(validationResult.getErrorMessage());
+        }
+
+        var userContext = validationResult.getUserContext();
+        User userInfo = User.newBuilder()
+                .setUserId(userContext.getUserId())
+                .setUsername(userContext.getUsername())
+                .setEmail(userContext.getEmail() != null ? userContext.getEmail() : "")
+                .setFirstName(userContext.getFirstName() != null ? userContext.getFirstName() : "")
+                .setLastName(userContext.getLastName() != null ? userContext.getLastName() : "")
+                .setRole(userContext.getRoles().contains("ADMIN") ? UserRole.ADMIN : UserRole.USER)
+                .setStatus(UserStatus.ACTIVE)
+                .build();
+
+        ValidateTokenResponse response = ValidateTokenResponse.newBuilder()
+                .setValid(true)
+                .setUserInfo(userInfo)
+                .setMessage("Token is valid")
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void refreshToken(RefreshTokenRequest request, StreamObserver<RefreshTokenResponse> responseObserver) {
-        try {
-            KeycloakAuthService.RefreshResult refreshResult = keycloakAuthService.refreshToken(request.getRefreshToken());
-
-            RefreshTokenResponse.Builder responseBuilder = RefreshTokenResponse.newBuilder()
-                    .setSuccess(refreshResult.isSuccess());
-
-            if (refreshResult.isSuccess()) {
-                responseBuilder
-                        .setAccessToken(refreshResult.getAccessToken())
-                        .setRefreshToken(refreshResult.getRefreshToken())
-                        .setExpiresIn(refreshResult.getExpiresIn())
-                        .setMessage("Token refreshed successfully");
-            } else {
-                responseBuilder.setMessage(refreshResult.getErrorMessage());
-            }
-
-            responseObserver.onNext(responseBuilder.build());
-            responseObserver.onCompleted();
-
-        } catch (Exception e) {
-            log.error("Token refresh error: {}", e.getMessage());
-            responseObserver.onError(Status.INTERNAL
-                    .withDescription("Token refresh failed")
-                    .asRuntimeException());
+        if (request.getRefreshToken().isEmpty()) {
+            throw new IllegalArgumentException("Refresh token is required");
         }
+
+        KeycloakAuthService.RefreshResult refreshResult = keycloakAuthService.refreshToken(request.getRefreshToken());
+
+        if (!refreshResult.isSuccess()) {
+
+            throw new SecurityException(refreshResult.getErrorMessage());
+        }
+
+        RefreshTokenResponse response = RefreshTokenResponse.newBuilder()
+                .setSuccess(true)
+                .setAccessToken(refreshResult.getAccessToken())
+                .setRefreshToken(refreshResult.getRefreshToken())
+                .setExpiresIn(refreshResult.getExpiresIn())
+                .setMessage("Token refreshed successfully")
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void logout(LogoutRequest request, StreamObserver<LogoutResponse> responseObserver) {
-        try {
-            KeycloakAuthService.LogoutResult logoutResult = keycloakAuthService.logoutWithAccessToken(request.getAccessToken(), request.getRefreshToken());
-
-            LogoutResponse response = LogoutResponse.newBuilder()
-                    .setSuccess(logoutResult.isSuccess())
-                    .setMessage(logoutResult.getMessage())
-                    .build();
-
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-
-            log.info("User logged out successfully");
-
-        } catch (Exception e) {
-            log.error("Logout error: {}", e.getMessage());
-            responseObserver.onError(Status.INTERNAL
-                    .withDescription("Logout failed")
-                    .asRuntimeException());
+        if (request.getAccessToken().isEmpty()) {
+            throw new IllegalArgumentException("Access token is required");
         }
+
+        KeycloakAuthService.LogoutResult logoutResult = keycloakAuthService.logoutWithAccessToken(
+                request.getAccessToken(), request.getRefreshToken());
+
+        if (!logoutResult.isSuccess()) {
+            throw new RuntimeException("Logout failed: " + logoutResult.getMessage());
+        }
+
+        LogoutResponse response = LogoutResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage(logoutResult.getMessage())
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+
+        log.info("User logged out successfully");
     }
 
     @Override
     public void register(RegisterRequest request, StreamObserver<RegisterResponse> responseObserver) {
-        try {
-            log.info("Registration attempt for user: {}", request.getUsername());
+        log.info("Registration attempt for user: {}", request.getUsername());
 
+        validateRegistrationRequest(request);
+
+        Optional<com.barakah.user.entity.User> existingUser = userService.getUserByUsernameOptional(request.getUsername());
+        if (existingUser.isPresent()) {
+            throw new IllegalStateException("Username already exists");
+        }
+
+        existingUser = userService.getUserByEmailOptional(request.getEmail());
+        if (existingUser.isPresent()) {
+            throw new IllegalStateException("Email already exists");
+        }
+
+        UserResponse user = userService.createUser(
+                CreateUserRequest.newBuilder()
+                        .setUsername(request.getUsername())
+                        .setEmail(request.getEmail())
+                        .setFirstName(request.getFirstName())
+                        .setLastName(request.getLastName())
+                        .setPhoneNumber(request.getPhoneNumber())
+                        .setPassword(request.getPassword())
+                        .setAddress(request.getAddress())
+                        .setDateOfBirth(request.getDateOfBirth())
+                        .setRole(UserRole.USER)
+                        .build()
+        );
+
+        if (user.getUserId() == null) {
+            throw new RuntimeException("Failed to create user: Database error");
+        }
+
+        User userInfo = buildUserInfo(user);
+
+        RegisterResponse.Builder responseBuilder = RegisterResponse.newBuilder()
+                .setSuccess(true)
+                .setUserInfo(userInfo)
+                .setMessage("Registration successful");
+
+        if (shouldAutoLoginAfterRegistration()) {
             try {
-                UserResponse existingUser = userService.getUserByUsername(request.getUsername());
-                if (existingUser != null) {
-                    RegisterResponse response = RegisterResponse.newBuilder()
-                            .setSuccess(false)
-                            .setMessage("Username already exists")
-                            .build();
+                KeycloakAuthService.AuthenticationResult authResult = keycloakAuthService.login(
+                        request.getUsername(), request.getPassword());
 
-                    responseObserver.onNext(response);
-                    responseObserver.onCompleted();
-                    return;
+                if (authResult.isSuccess()) {
+                    responseBuilder
+                            .setAccessToken(authResult.getAccessToken())
+                            .setRefreshToken(authResult.getRefreshToken())
+                            .setExpiresIn(authResult.getExpiresIn());
                 }
             } catch (Exception e) {
-
+                log.warn("Auto-login failed after registration for user {}: {}", request.getUsername(), e.getMessage());
+    
             }
+        }
 
-            try {
-                UserResponse existingUser = userService.getUserByEmail(request.getEmail());
-                if (existingUser != null) {
-                    RegisterResponse response = RegisterResponse.newBuilder()
-                            .setSuccess(false)
-                            .setMessage("Email already exists")
-                            .build();
+        responseObserver.onNext(responseBuilder.build());
+        responseObserver.onCompleted();
 
-                    responseObserver.onNext(response);
-                    responseObserver.onCompleted();
-                    return;
-                }
-            } catch (Exception e) {
+        log.info("User registered successfully: {}", request.getUsername());
+    }
 
-            }
+    private void validateRegistrationRequest(RegisterRequest request) {
+        if (request.getUsername().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        if (request.getEmail().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (request.getFirstName().isEmpty()) {
+            throw new IllegalArgumentException("First name is required");
+        }
+        if (request.getLastName().isEmpty()) {
+            throw new IllegalArgumentException("Last name is required");
+        }
 
-            UserResponse user = userService.createUser(
-                    CreateUserRequest.newBuilder()
-                            .setUsername(request.getUsername())
-                            .setEmail(request.getEmail())
-                            .setFirstName(request.getFirstName())
-                            .setLastName(request.getLastName())
-                            .setPhoneNumber(request.getPhoneNumber())
-                            .setPhoneNumber(request.getPhoneNumber())
-                            .setPassword(request.getPassword())
-                            .setRole(UserRole.USER_ROLE_USER)
-                            .build()
-            );
+        if (!isValidEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
 
-            try {
-                if (user.getUserId() != null) {
-
-                    UserInfo userInfo = UserInfo.newBuilder()
-                            .setUserId(user.getUserId())
-                            .setUsername(user.getUsername())
-                            .setEmail(user.getEmail())
-                            .setFirstName(user.getFirstName())
-                            .setLastName(user.getLastName())
-                            .setRole("USER")
-                            .setStatus("ACTIVE")
-                            .build();
-
-                    RegisterResponse.Builder responseBuilder = RegisterResponse.newBuilder()
-                            .setSuccess(true)
-                            .setUserInfo(userInfo)
-                            .setMessage("Registration successful");
-
-                    if (shouldAutoLoginAfterRegistration()) {
-                        KeycloakAuthService.AuthenticationResult authResult = keycloakAuthService.login(
-                                request.getUsername(), request.getPassword());
-
-                        if (authResult.isSuccess()) {
-                            responseBuilder
-                                    .setAccessToken(authResult.getAccessToken())
-                                    .setRefreshToken(authResult.getRefreshToken())
-                                    .setExpiresIn(authResult.getExpiresIn());
-                        }
-                    }
-
-                    responseObserver.onNext(responseBuilder.build());
-                    responseObserver.onCompleted();
-
-                    log.info("User registered successfully: {}", request.getUsername());
-
-                } else {
-                    RegisterResponse response = RegisterResponse.newBuilder()
-                            .setSuccess(false)
-                            .setMessage("Registration failed: User creation in database failed")
-                            .build();
-
-                    responseObserver.onNext(response);
-                    responseObserver.onCompleted();
-                }
-            } catch (Exception e) {
-
-                userService.deleteUser(user.getUserId());
-
-                log.error("Failed to create user in database after Keycloak creation: {}", e.getMessage());
-                responseObserver.onError(Status.INTERNAL
-                        .withDescription("Registration failed: Database error")
-                        .asRuntimeException());
-            }
-
-        } catch (Exception e) {
-            log.error("Registration failed for user {}: {}", request.getUsername(), e.getMessage());
-            responseObserver.onError(Status.INTERNAL
-                    .withDescription("Registration failed")
-                    .asRuntimeException());
+        if (request.getPassword().length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters long");
         }
     }
 
-    private boolean shouldAutoLoginAfterRegistration() {
+    private boolean isValidEmail(String email) {
+        return email.contains("@") && email.contains(".");
+    }
 
+    private User buildUserInfo(UserResponse user) {
+        return User.newBuilder()
+                .setUserId(user.getUserId())
+                .setUsername(user.getUsername())
+                .setEmail(user.getEmail())
+                .setFirstName(user.getFirstName())
+                .setLastName(user.getLastName())
+                .setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
+                .setAddress(user.getAddress() != null ? user.getAddress() : "")
+                .setDateOfBirth(user.getDateOfBirth() != null ? user.getDateOfBirth().toString() : "")
+                .setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : "")
+                .setUpdatedAt(user.getUpdatedAt() != null ? user.getUpdatedAt().toString() : "")
+                .setRole(UserRole.USER)
+                .setStatus(UserStatus.ACTIVE)
+                .build();
+    }
+
+    private boolean shouldAutoLoginAfterRegistration() {
         return true;
     }
 }

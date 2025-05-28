@@ -1,7 +1,6 @@
 package com.barakah.user.entity;
 
 import jakarta.persistence.*;
-import com.barakah.user.entity.UserStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,9 +10,9 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_user_username", columnList = "username", unique = true),
-    @Index(name = "idx_user_email", columnList = "email", unique = true),
-    @Index(name = "idx_user_keycloak_id", columnList = "keycloak_id", unique = true)
+        @Index(name = "idx_user_username", columnList = "username", unique = true),
+        @Index(name = "idx_user_email", columnList = "email", unique = true),
+        @Index(name = "idx_user_keycloak_id", columnList = "keycloak_id", unique = true)
 })
 @Data
 @NoArgsConstructor
@@ -88,18 +87,6 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public String getFullName() {
-        return firstName + " " + lastName;
-    }
-
-    public boolean isActive() {
-        return status == UserStatus.ACTIVE;
-    }
-
-    public boolean isAdmin() {
-        return role == UserRole.ADMIN;
     }
 
     @Override

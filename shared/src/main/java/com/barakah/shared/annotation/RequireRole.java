@@ -1,4 +1,4 @@
-package com.barakah.auth.annotation;
+package com.barakah.shared.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

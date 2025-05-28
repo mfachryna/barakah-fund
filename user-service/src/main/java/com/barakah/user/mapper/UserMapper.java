@@ -25,6 +25,7 @@ public interface UserMapper {
 //    @Mapping(target = "lastLogin", ignore = true)
 //    @Mapping(target = "lastLogin", ignore = true)
     UserResponse toResponse(User user);
+    void fromResponse(UserResponse response, @MappingTarget User user);
 
     List<UserResponse> toResponseList(List<User> users);
 

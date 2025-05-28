@@ -1,4 +1,4 @@
-package com.barakah.auth.context;
+package com.barakah.shared.context;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,15 +18,20 @@ public class UserContext {
     private String firstName;
     private String lastName;
     private Set<String> roles;
-    
+    private String token;
+
     public boolean hasRole(String role) {
         return roles != null && roles.contains(role);
     }
-    
+
     public boolean isAdmin() {
         return hasRole("ADMIN");
     }
-    
+
+    public boolean isService() {
+        return hasRole("SERVICE");
+    }
+
     public boolean isUser() {
         return hasRole("USER");
     }

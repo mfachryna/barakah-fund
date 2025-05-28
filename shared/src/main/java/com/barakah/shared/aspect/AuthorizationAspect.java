@@ -1,7 +1,7 @@
-package com.barakah.auth.aspect;
+package com.barakah.shared.aspect;
 
-import com.barakah.auth.annotation.RequireRole;
-import com.barakah.auth.context.UserContextHolder;
+import com.barakah.shared.annotation.RequireRole;
+import com.barakah.shared.context.UserContextHolder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
