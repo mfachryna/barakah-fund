@@ -1,0 +1,297 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:barakah_transactions}
+        username: ${DB_USERNAME:barakah_user}
+        password: ${DB_PASSWORD:changeme}
+        driver-class-name: org.postgresql.Driver
+        hikari:
+            maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+            minimum-idle: ${DB_POOL_MIN_IDLE:5}
+            connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+            idle-timeout: ${DB_IDLE_TIMEOUT:600000}
+            max-lifetime: ${DB_MAX_LIFETIME:1800000}
+            leak-detection-threshold: ${DB_LEAK_DETECTION:60000}
+
+    cloud:
+        config:
+            enabled: ${CONFIG_SERVER_ENABLED:false}
+            uri: ${CONFIG_SERVER_URL:http://localhost:8888}
+        discovery:
+            enabled: ${EUREKA_ENABLED:true}
+        service-registry:
+            auto-registration:
+                enabled: ${EUREKA_AUTO_REGISTER:true}
+
+    jpa:
+        hibernate:
+            ddl-auto: ${JPA_DDL_AUTO:validate}
+            naming:
+                physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                show_sql: ${JPA_SHOW_SQL:false}
+                format_sql: ${JPA_FORMAT_SQL:false}
+                use_sql_comments: ${JPA_USE_COMMENTS:false}
+                jdbc:
+                    batch_size: ${JPA_BATCH_SIZE:50}
+                order_inserts: true
+                order_updates: true
+                # Fix decimal precision for money fields
+                type:
+                    preferred_numeric_types: 
+                        decimal: decimal(19,2)
+        show-sql: ${JPA_SHOW_SQL:false}
+        open-in-view: false
+
+    flyway:
+        enabled: ${FLYWAY_ENABLED:true}
+        baseline-on-migrate: ${FLYWAY_BASELINE:true}
+        locations: classpath:db/migration
+        validate-on-migrate: ${FLYWAY_VALIDATE:true}
+        clean-disabled: true
+
+    transaction:
+        default-timeout: ${TRANSACTION_TIMEOUT:60}
+
+    cache:
+        type: ${CACHE_TYPE:redis}
+        
+    redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+        timeout: ${REDIS_TIMEOUT:3000ms}
+        database: ${REDIS_DB:1}
+        password: ${REDIS_PASSWORD:}
+        lettuce:
+            pool:
+                max-active: ${REDIS_POOL_MAX:10}
+                max-idle: ${REDIS_POOL_MAX_IDLE:8}
+                min-idle: ${REDIS_POOL_MIN_IDLE:2}
+
+server:
+    port: ${SERVER_PORT:8083}
+    servlet:
+        context-path: /example-service
+    error:
+        include-message: ${ERROR_INCLUDE_MESSAGE:never}
+        include-binding-errors: ${ERROR_INCLUDE_BINDING:never}
+        include-stacktrace: ${ERROR_INCLUDE_STACKTRACE:never}
+    shutdown: graceful
+
+grpc:
+    server:
+        port: ${GRPC_PORT:9093}
+        enable-reflection: ${GRPC_REFLECTION:false}
+        max-inbound-message-size: ${GRPC_MAX_INBOUND:8MB}
+        max-outbound-message-size: ${GRPC_MAX_OUTBOUND:8MB}
+        security:
+            enabled: ${GRPC_SECURITY_ENABLED:false}
+    client:
+        account-service:
+            address: ${ACCOUNT_SERVICE_HOST:localhost}:${ACCOUNT_SERVICE_GRPC_PORT:9092}
+            negotiationType: ${GRPC_NEGOTIATION:plaintext}
+            keepAliveTime: ${GRPC_KEEP_ALIVE:30s}
+            keepAliveTimeout: ${GRPC_KEEP_ALIVE_TIMEOUT:5s}
+            keepAliveWithoutCalls: true
+            maxRetryAttempts: ${GRPC_MAX_RETRY:3}
+        user-service:
+            address: ${USER_SERVICE_HOST:localhost}:${USER_SERVICE_GRPC_PORT:9091}
+            negotiationType: ${GRPC_NEGOTIATION:plaintext}
+            keepAliveTime: ${GRPC_KEEP_ALIVE:30s}
+            keepAliveTimeout: ${GRPC_KEEP_ALIVE_TIMEOUT:5s}
+            keepAliveWithoutCalls: true
+            maxRetryAttempts: ${GRPC_MAX_RETRY:3}
+
+eureka:
+    client:
+        service-url:
+            defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+        register-with-eureka: ${EUREKA_REGISTER:true}
+        fetch-registry: ${EUREKA_FETCH_REGISTRY:true}
+        healthcheck:
+            enabled: ${EUREKA_HEALTHCHECK:true}
+        initial-instance-info-replication-interval-seconds: ${EUREKA_INITIAL_INTERVAL:10}
+        instance-info-replication-interval-seconds: ${EUREKA_REPLICATION_INTERVAL:10}
+    instance:
+        prefer-ip-address: ${EUREKA_PREFER_IP:true}
+        hostname: ${HOSTNAME:localhost}
+        lease-renewal-interval-in-seconds: ${EUREKA_LEASE_RENEWAL:10}
+        lease-expiration-duration-in-seconds: ${EUREKA_LEASE_EXPIRATION:30}
+        metadata-map:
+            grpc.port: ${GRPC_PORT:9093}
+            management.context-path: /example-service/actuator
+            version: ${APP_VERSION:1.0.0}
+
+keycloak:
+    auth-server-url: ${KEYCLOAK_URL:http://localhost:8080}
+    realm: ${KEYCLOAK_REALM:barakah}
+    resource: ${KEYCLOAK_CLIENT_ID:example-service}
+    credentials:
+        secret: ${KEYCLOAK_CLIENT_SECRET:example-service-secret}
+    admin:
+        username: ${KEYCLOAK_ADMIN_USER:admin}
+        password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+        client-id: ${KEYCLOAK_ADMIN_CLIENT:admin-cli}
+    mock:
+        enabled: ${KEYCLOAK_MOCK_ENABLED:false}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: ${ACTUATOR_ENDPOINTS:health,info,metrics,prometheus}
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: ${HEALTH_SHOW_DETAILS:when-authorized}
+            show-components: ${HEALTH_SHOW_COMPONENTS:when-authorized}
+        metrics:
+            enabled: ${METRICS_ENABLED:true}
+    health:
+        eureka:
+            enabled: ${HEALTH_EUREKA:true}
+        db:
+            enabled: ${HEALTH_DB:true}
+        redis:
+            enabled: ${HEALTH_REDIS:true}
+    metrics:
+        export:
+            prometheus:
+                enabled: ${PROMETHEUS_ENABLED:true}
+                step: ${PROMETHEUS_STEP:1m}
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+            slo:
+                http.server.requests: 50ms,100ms,200ms,500ms
+
+logging:
+    level:
+        root: ${LOG_LEVEL_ROOT:INFO}
+        com.barakah: ${LOG_LEVEL_APP:INFO}
+        com.barakah.transaction: ${LOG_LEVEL_TRANSACTION:INFO}
+        com.barakah.shared: ${LOG_LEVEL_SHARED:INFO}
+        org.springframework.security: ${LOG_LEVEL_SECURITY:WARN}
+        org.springframework.web: ${LOG_LEVEL_WEB:WARN}
+        org.springframework.transaction: ${LOG_LEVEL_TX:WARN}
+        org.keycloak: ${LOG_LEVEL_KEYCLOAK:WARN}
+        org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
+        org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_SQL_BIND:WARN}
+        net.devh.boot.grpc: ${LOG_LEVEL_GRPC:INFO}
+        io.grpc: ${LOG_LEVEL_GRPC_IO:WARN}
+        org.flywaydb: ${LOG_LEVEL_FLYWAY:INFO}
+    pattern:
+        console: "${LOG_PATTERN_CONSOLE:%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n}"
+        file: "${LOG_PATTERN_FILE:%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n}"
+    file:
+        name: ${LOG_FILE:logs/example-service.log}
+        max-size: ${LOG_MAX_SIZE:50MB}
+        max-history: ${LOG_MAX_HISTORY:30}
+        total-size-cap: ${LOG_TOTAL_SIZE:1GB}
+
+app:
+    security:
+        cors:
+            allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200}
+            allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+            allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+            allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+            max-age: ${CORS_MAX_AGE:3600}
+        jwt:
+            secret: ${JWT_SECRET:change-me-in-production}
+            expiration: ${JWT_EXPIRATION:86400000}
+
+    transaction:
+        processing:
+            async-enabled: ${TRANSACTION_ASYNC:true}
+            max-retry-attempts: ${TRANSACTION_MAX_RETRY:3}
+            retry-delay: ${TRANSACTION_RETRY_DELAY:1000}
+            timeout: ${TRANSACTION_TIMEOUT_MS:30000}
+        validation:
+            max-amount: ${TRANSACTION_MAX_AMOUNT:1000000.00}
+            min-amount: ${TRANSACTION_MIN_AMOUNT:0.01}
+        categories:
+            default-category: ${DEFAULT_CATEGORY:GENERAL}
+        limits:
+            daily-limit: ${DAILY_TRANSACTION_LIMIT:100000.00}
+            monthly-limit: ${MONTHLY_TRANSACTION_LIMIT:1000000.00}
+
+    services:
+        account-service:
+            url: ${ACCOUNT_SERVICE_URL:http://localhost:8082}
+            timeout: ${ACCOUNT_SERVICE_TIMEOUT:5000}
+            circuit-breaker:
+                enabled: ${ACCOUNT_CB_ENABLED:true}
+                failure-rate-threshold: ${ACCOUNT_CB_FAILURE_RATE:50}
+                minimum-number-of-calls: ${ACCOUNT_CB_MIN_CALLS:10}
+                sliding-window-size: ${ACCOUNT_CB_WINDOW_SIZE:10}
+        user-service:
+            url: ${USER_SERVICE_URL:http://localhost:8081}
+            timeout: ${USER_SERVICE_TIMEOUT:3000}
+            circuit-breaker:
+                enabled: ${USER_CB_ENABLED:true}
+                failure-rate-threshold: ${USER_CB_FAILURE_RATE:50}
+                minimum-number-of-calls: ${USER_CB_MIN_CALLS:10}
+                sliding-window-size: ${USER_CB_WINDOW_SIZE:10}
+        notification-service:
+            url: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+            timeout: ${NOTIFICATION_SERVICE_TIMEOUT:3000}
+
+    events:
+        kafka:
+            enabled: ${KAFKA_ENABLED:false}
+            bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+            producer:
+                key-serializer: org.apache.kafka.common.serialization.StringSerializer
+                value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+                acks: ${KAFKA_PRODUCER_ACKS:all}
+                retries: ${KAFKA_PRODUCER_RETRIES:3}
+            consumer:
+                group-id: ${KAFKA_CONSUMER_GROUP:example-service}
+                key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+                value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+                auto-offset-reset: ${KAFKA_CONSUMER_OFFSET:earliest}
+            topics:
+                transaction-events: ${KAFKA_TOPIC_TRANSACTION:transaction.events}
+                account-events: ${KAFKA_TOPIC_ACCOUNT:account.events}
+
+features:
+    transaction-validation: ${FEATURE_VALIDATION:true}
+    audit-logging: ${FEATURE_AUDIT:true}
+    rate-limiting: ${FEATURE_RATE_LIMIT:true}
+    cache-enabled: ${FEATURE_CACHE:true}
+    async-processing: ${FEATURE_ASYNC:true}
+    event-publishing: ${FEATURE_EVENTS:true}
+    balance-tracking: ${FEATURE_BALANCE_TRACKING:true}
+
+# Circuit breaker configuration
+resilience4j:
+    circuitbreaker:
+        instances:
+            account-service:
+                register-health-indicator: true
+                failure-rate-threshold: ${ACCOUNT_CB_FAILURE_RATE:50}
+                minimum-number-of-calls: ${ACCOUNT_CB_MIN_CALLS:10}
+                sliding-window-size: ${ACCOUNT_CB_WINDOW_SIZE:10}
+                wait-duration-in-open-state: ${ACCOUNT_CB_WAIT_DURATION:30s}
+            user-service:
+                register-health-indicator: true
+                failure-rate-threshold: ${USER_CB_FAILURE_RATE:50}
+                minimum-number-of-calls: ${USER_CB_MIN_CALLS:10}
+                sliding-window-size: ${USER_CB_WINDOW_SIZE:10}
+                wait-duration-in-open-state: ${USER_CB_WAIT_DURATION:30s}
+    retry:
+        instances:
+            account-service:
+                max-attempts: ${ACCOUNT_RETRY_MAX:3}
+                wait-duration: ${ACCOUNT_RETRY_WAIT:1s}
+            user-service:
+                max-attempts: ${USER_RETRY_MAX:3}
+                wait-duration: ${USER_RETRY_WAIT:1s}
+    timelimiter:
+        instances:
+            account-service:
+                timeout-duration: ${ACCOUNT_TIMEOUT:5s}
+            user-service:
+                timeout-duration: ${USER_TIMEOUT:3s}

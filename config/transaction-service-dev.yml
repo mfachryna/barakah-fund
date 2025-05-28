@@ -1,8 +1,8 @@
 spring:
     datasource:
-        url: jdbc:postgresql://localhost:5432/barakah_users
-        username: barakah_user
-        password: barakah_password
+        url: jdbc:postgresql://localhost:5432/barakah_transactions
+        username: barakah_transaction
+        password: barakah_transaction_password
         driver-class-name: org.postgresql.Driver
         hikari:
             maximum-pool-size: 10
@@ -22,7 +22,7 @@ spring:
 
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: none
             naming:
                 physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
         properties:
@@ -54,9 +54,9 @@ spring:
         database: 0
 
 server:
-    port: 8081
+    port: 8083
     servlet:
-        context-path: /user-service
+        context-path: /transaction-service
     error:
         include-message: always
         include-binding-errors: always
@@ -64,10 +64,24 @@ server:
 
 grpc:
     server:
-        port: 9091
+        port: 9093
         enable-reflection: true
         max-inbound-message-size: 4MB
         max-outbound-message-size: 4MB
+    client:
+        account-service:
+            address: "static://localhost:9092"
+            negotiationType: plaintext
+            enableKeepAlive: true
+            keepAliveWithoutCalls: true
+            keepAliveTime: 30s
+            keepAliveTimeout: 5s
+            maxInboundMessageSize: 4MB
+            maxInboundMetadataSize: 8192
+            deadline: 10s
+            retry: true
+            maxRetryAttempts: 3
+            defaultLoadBalancingPolicy: pick_first
 
 eureka:
     client:
@@ -147,6 +161,22 @@ logging:
         max-size: 10MB
         max-history: 30
 
+kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9192}
+    producer:
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
+        value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        acks: all
+        retries: 3
+        properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 1
+    consumer:
+        group-id: transaction-service
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        auto-offset-reset: earliest
+
 app:
     security:
         cors:
@@ -159,6 +189,12 @@ app:
             secret: dev-secret-key-change-in-production
             expiration: 86400000
 
+    kafka:
+        topics:
+            transaction-events: transaction-events
+            notification-events: notification-events
+            audit-events: audit-events
+
     user:
         default-role: USER
         password:
@@ -169,12 +205,42 @@ app:
             auto-approve: true
 
     services:
-        auth-service:
-            url: http://localhost:8082
+        account-service:
+            url: http://localhost:9092
+            timeout: 5000
+        user-service:
+            url: http://localhost:9091
             timeout: 5000
         notification-service:
-            url: http://localhost:8083
+            url: http://localhost:9094
             timeout: 3000
+
+resilience4j:
+    circuitbreaker:
+        instances:
+            account-service:
+                registerHealthIndicator: true
+                slidingWindowSize: 10
+                minimumNumberOfCalls: 5
+                failureRateThreshold: 50
+                waitDurationInOpenState: 30s
+                permittedNumberOfCallsInHalfOpenState: 3
+                recordExceptions:
+                    - io.grpc.StatusRuntimeException
+                    - java.util.concurrent.TimeoutException
+                ignoreExceptions:
+                    - com.barakah.transaction.exception.TransactionNotFoundException
+    retry:
+        instances:
+            account-service:
+                maxAttempts: 3
+                waitDuration: 2s
+                exponentialBackoffMultiplier: 2
+                retryExceptions:
+                    - io.grpc.StatusRuntimeException
+                    - java.util.concurrent.TimeoutException
+                ignoreExceptions:
+                    - com.barakah.transaction.exception.TransactionNotFoundException
 
 features:
     email-verification: false

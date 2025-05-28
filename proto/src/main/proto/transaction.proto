@@ -1,0 +1,249 @@
+syntax = "proto3";
+
+package barakah.transaction.v1;
+
+option java_multiple_files = true;
+option java_package = "com.barakah.transaction.proto.v1";
+option java_outer_classname = "TransactionProto";
+
+import "common.proto";
+
+
+service TransactionService {
+  rpc CreateTransaction(CreateTransactionRequest) returns (CreateTransactionResponse);
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
+  rpc UpdateTransactionStatus(UpdateTransactionStatusRequest) returns (UpdateTransactionStatusResponse);
+  rpc GetTransactionsByAccount(GetTransactionsByAccountRequest) returns (GetTransactionsByAccountResponse);
+  rpc GetTransactionLogs(GetTransactionLogsRequest) returns (GetTransactionLogsResponse);
+}
+
+
+service TransactionCategoryService {
+  rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+  rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse);
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
+}
+
+
+enum TransactionType {
+  TRANSACTION_TYPE_UNSPECIFIED = 0;
+  TRANSFER = 1;         
+  DEPOSIT = 2;          
+  WITHDRAWAL = 3;       
+  PAYMENT = 4;          
+  REFUND = 5;           
+  FEE = 6;             
+  INTEREST = 7;        
+}
+
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  PROCESSING = 2;
+  COMPLETED = 3;
+  FAILED = 4;
+  CANCELLED = 5;
+  REVERSED = 6;
+}
+
+enum TransactionDirection {
+  TRANSACTION_DIRECTION_UNSPECIFIED = 0;
+  DEBIT = 1;  
+  CREDIT = 2; 
+}
+
+enum TransferType {
+  TRANSFER_TYPE_UNSPECIFIED = 0;
+  INTERNAL = 1; 
+  EXTERNAL = 2; 
+}
+
+
+message Transaction {
+  string transaction_id = 1;
+  string reference_number = 2;
+  TransactionType type = 3;
+  TransactionStatus status = 4;
+  TransactionDirection direction = 5;
+  TransferType transfer_type = 6;
+  
+  string from_account_id = 7;
+  string from_account_number = 8;
+  string to_account_id = 9;
+  string to_account_number = 10;
+  
+  int64 amount = 11;        
+  string currency = 12;
+  string description = 13;
+  string notes = 14;
+  
+  string category_id = 15;
+  TransactionCategory category = 16;
+  
+  int64 balance_before = 17;
+  int64 balance_after = 18;
+  
+  string created_by = 19;
+  string updated_by = 20;
+  string created_at = 21;
+  string updated_at = 22;
+  
+  string external_reference = 23;
+  string external_provider = 24;
+}
+
+message TransactionCategory {
+  string category_id = 1;
+  string name = 2;
+  string description = 3;
+  string icon = 4;
+  string color = 5;
+  bool is_active = 6;
+  bool is_system = 7;     
+  string created_by = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message TransactionLog {
+  string log_id = 1;
+  string transaction_id = 2;
+  string account_id = 3;
+  string account_number = 4;
+  TransactionDirection direction = 5;
+  int64 amount = 6;
+  int64 balance_before = 7;
+  int64 balance_after = 8;
+  string timestamp = 9;
+  string notes = 10;
+}
+
+
+message CreateTransactionRequest {
+  TransactionType type = 1;
+  string from_account_number = 2;
+  string to_account_number = 3;
+  int64 amount = 4;
+  string currency = 5;
+  string description = 6;
+  string notes = 7;
+  string category_id = 8;
+  string external_reference = 9;
+  string external_provider = 10;
+}
+
+message CreateTransactionResponse {
+  Transaction transaction = 1;
+  string message = 2;
+}
+
+message GetTransactionRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionResponse {
+  Transaction transaction = 1;
+}
+
+message ListTransactionsRequest {
+  barakah.common.v1.PageRequest page_request = 1;
+  map<string, string> filters = 2;
+  string search = 3;
+}
+
+message ListTransactionsResponse {
+  repeated Transaction transactions = 1;
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+message UpdateTransactionStatusRequest {
+  string transaction_id = 1;
+  TransactionStatus status = 2;
+  string notes = 3;
+}
+
+message UpdateTransactionStatusResponse {
+  Transaction transaction = 1;
+  string message = 2;
+}
+
+message GetTransactionsByAccountRequest {
+  string account_number = 1;
+  barakah.common.v1.PageRequest page_request = 2;
+  string from_date = 3;
+  string to_date = 4;
+  TransactionDirection direction = 5;
+}
+
+message GetTransactionsByAccountResponse {
+  repeated Transaction transactions = 1;
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+message GetTransactionLogsRequest {
+  string transaction_id = 1;
+  string account_id = 2;
+  barakah.common.v1.PageRequest page_request = 3;
+}
+
+message GetTransactionLogsResponse {
+  repeated TransactionLog logs = 1;
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+
+message CreateCategoryRequest {
+  string name = 1;
+  string description = 2;
+  string icon = 3;
+  string color = 4;
+}
+
+message CreateCategoryResponse {
+  TransactionCategory category = 1;
+  string message = 2;
+}
+
+message GetCategoryRequest {
+  string category_id = 1;
+}
+
+message GetCategoryResponse {
+  TransactionCategory category = 1;
+}
+
+message ListCategoriesRequest {
+  barakah.common.v1.PageRequest page_request = 1;
+  bool include_inactive = 2;
+  bool include_system = 3;
+}
+
+message ListCategoriesResponse {
+  repeated TransactionCategory categories = 1;
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+message UpdateCategoryRequest {
+  string category_id = 1;
+  string name = 2;
+  string description = 3;
+  string icon = 4;
+  string color = 5;
+  bool is_active = 6;
+}
+
+message UpdateCategoryResponse {
+  TransactionCategory category = 1;
+  string message = 2;
+}
+
+message DeleteCategoryRequest {
+  string category_id = 1;
+}
+
+message DeleteCategoryResponse {
+  string message = 1;
+}

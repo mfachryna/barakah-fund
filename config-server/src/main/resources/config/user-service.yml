@@ -80,7 +80,7 @@ keycloak:
     realm: barakah
     resource: user-service
     credentials:
-        secret: user-service-secret
+        secret: user-service-secret-change-me
     admin:
         username: admin
         password: admin

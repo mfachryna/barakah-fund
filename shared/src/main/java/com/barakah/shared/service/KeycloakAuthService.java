@@ -42,11 +42,10 @@ public class KeycloakAuthService {
     private AuthzClient authzClient;
     private RestTemplate restTemplate;
 
-    
     public KeycloakAuthService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
-        log.info("KeycloakAuthService created with RestTemplate: {}", 
-                 restTemplate != null ? restTemplate.getClass().getSimpleName() : "null");
+        log.info("KeycloakAuthService created with RestTemplate: {}",
+                restTemplate != null ? restTemplate.getClass().getSimpleName() : "null");
     }
 
     @PostConstruct
@@ -64,12 +63,11 @@ public class KeycloakAuthService {
 
     public AuthenticationResult login(String username, String password) {
         log.debug("Attempting login for username: {}", username);
-        
-        // Input validation
+
         if (username == null || username.trim().isEmpty()) {
             throw new AuthExceptions.InvalidCredentialsException("Username cannot be empty");
         }
-        
+
         if (password == null || password.trim().isEmpty()) {
             throw new AuthExceptions.InvalidCredentialsException("Password cannot be empty");
         }
@@ -97,7 +95,6 @@ public class KeycloakAuthService {
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 AccessTokenResponse tokenResponse = response.getBody();
 
-                // Validate the received token
                 ValidationResult validation = validateToken(tokenResponse.getToken(), "access_token");
                 UserContext userContext = validation.isValid() ? validation.getUserContext() : null;
 
@@ -117,12 +114,12 @@ public class KeycloakAuthService {
             }
 
         } catch (AuthExceptions.InvalidCredentialsException | AuthExceptions.InvalidTokenException e) {
-            // Re-throw custom exceptions
+
             throw e;
-            
+
         } catch (HttpClientErrorException e) {
             log.warn("Login HTTP error for user {}: {} - {}", username, e.getStatusCode(), e.getResponseBodyAsString());
-            
+
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
                 throw new AuthExceptions.InvalidCredentialsException("Invalid username or password");
             } else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
@@ -146,7 +143,7 @@ public class KeycloakAuthService {
 
     public RefreshResult refreshToken(String refreshToken) {
         log.debug("Attempting to refresh token");
-        
+
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             throw new AuthExceptions.InvalidTokenException("Refresh token cannot be empty");
         }
@@ -184,10 +181,10 @@ public class KeycloakAuthService {
 
         } catch (AuthExceptions.TokenExpiredException e) {
             throw e;
-            
+
         } catch (HttpClientErrorException e) {
             log.warn("Token refresh HTTP error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            
+
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED || e.getStatusCode() == HttpStatus.BAD_REQUEST) {
                 String responseBody = e.getResponseBodyAsString();
                 if (responseBody.contains("invalid_grant") || responseBody.contains("Token is not active")) {
@@ -205,7 +202,7 @@ public class KeycloakAuthService {
 
     public LogoutResult logout(String refreshToken) {
         log.debug("Attempting logout");
-        
+
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             log.warn("Logout attempted with empty refresh token");
             return LogoutResult.success("Logged out (no token to revoke)");
@@ -246,21 +243,20 @@ public class KeycloakAuthService {
 
     public LogoutResult logoutWithAccessToken(String accessToken, String refreshToken) {
         log.debug("Attempting logout with access token");
-        
+
         try {
-            // Revoke tokens first
+
             boolean accessTokenRevoked = false;
             boolean refreshTokenRevoked = false;
-            
+
             if (accessToken != null && !accessToken.trim().isEmpty()) {
                 accessTokenRevoked = revokeToken(accessToken, "access_token");
             }
-            
+
             if (refreshToken != null && !refreshToken.trim().isEmpty()) {
                 refreshTokenRevoked = revokeToken(refreshToken, "refresh_token");
             }
 
-            // Perform logout
             String logoutUrl = String.format("%s/realms/%s/protocol/openid-connect/logout",
                     serverUrl, realm);
 
@@ -292,12 +288,15 @@ public class KeycloakAuthService {
         } catch (Exception e) {
             log.warn("Logout error: {}", e.getMessage());
 
-            // Try to revoke tokens as fallback
             try {
                 boolean tokenRevoked = false;
-                if (accessToken != null) tokenRevoked = revokeToken(accessToken, "access_token");
-                if (refreshToken != null) tokenRevoked = revokeToken(refreshToken, "refresh_token") || tokenRevoked;
-                
+                if (accessToken != null) {
+                    tokenRevoked = revokeToken(accessToken, "access_token");
+                }
+                if (refreshToken != null) {
+                    tokenRevoked = revokeToken(refreshToken, "refresh_token") || tokenRevoked;
+                }
+
                 if (tokenRevoked) {
                     return LogoutResult.success("Token revoked (logout had errors)");
                 } else {
@@ -314,7 +313,7 @@ public class KeycloakAuthService {
         if (token == null || token.trim().isEmpty()) {
             return false;
         }
-        
+
         try {
             String revokeUrl = String.format("%s/realms/%s/protocol/openid-connect/revoke",
                     serverUrl, realm);
@@ -386,10 +385,10 @@ public class KeycloakAuthService {
 
         } catch (AuthExceptions.TokenExpiredException | AuthExceptions.InvalidTokenException e) {
             throw e;
-            
+
         } catch (HttpClientErrorException e) {
             log.warn("Token validation HTTP error: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            
+
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
                 throw new AuthExceptions.InvalidTokenException("Token validation failed: Unauthorized");
             } else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
@@ -435,8 +434,8 @@ public class KeycloakAuthService {
         return userContext;
     }
 
-    // Result classes remain the same but with better exception handling
     public static class ValidationResult {
+
         private final boolean valid;
         private final String errorMessage;
         private final UserContext userContext;
@@ -470,6 +469,7 @@ public class KeycloakAuthService {
 
     @Getter
     public static class AuthenticationResult {
+
         private final boolean success;
         private final String accessToken;
         private final String refreshToken;
@@ -498,6 +498,7 @@ public class KeycloakAuthService {
     }
 
     public static class RefreshResult {
+
         private final boolean success;
         private final String accessToken;
         private final String refreshToken;
@@ -543,6 +544,7 @@ public class KeycloakAuthService {
     }
 
     public static class LogoutResult {
+
         private final boolean success;
         private final String message;
 

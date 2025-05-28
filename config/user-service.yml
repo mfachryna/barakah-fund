@@ -49,7 +49,7 @@ spring:
 server:
     port: 8081
     servlet:
-        context-path: /user-service
+        context-path: /account-service
     shutdown: graceful
 
 grpc:
@@ -59,28 +59,28 @@ grpc:
         max-message-size: 4MB
         max-header-list-size: 8192
 
-eureka:
-    client:
-        service-url:
-            defaultZone: http://eureka-server:8761/eureka/
-        register-with-eureka: true
-        fetch-registry: true
-        healthcheck:
-            enabled: true
-    instance:
-        prefer-ip-address: true
-        lease-renewal-interval-in-seconds: 30
-        lease-expiration-duration-in-seconds: 90
-        metadata-map:
-            grpc.port: 9091
-            management.context-path: /user-service/actuator
+# eureka:
+#     client:
+#         service-url:
+#             defaultZone: http://eureka-server:8761/eureka/
+#         register-with-eureka: true
+#         fetch-registry: true
+#         healthcheck:
+#             enabled: true
+#     instance:
+#         prefer-ip-address: true
+#         lease-renewal-interval-in-seconds: 30
+#         lease-expiration-duration-in-seconds: 90
+#         metadata-map:
+#             grpc.port: 9091
+#             management.context-path: /user-service/actuator
 
 keycloak:
     auth-server-url: http://keycloak:8080
     realm: barakah
     resource: user-service
     credentials:
-        secret: user-service-secret
+        secret: user-service-secret-change-me
     admin:
         username: admin
         password: admin

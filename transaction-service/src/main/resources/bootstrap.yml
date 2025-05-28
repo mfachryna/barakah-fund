@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: transaction-service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  cloud:
+    config:
+      username: config-user
+      password: config-pass
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+  profiles:
+    active: dev
+
+# Default local development settings
+server:
+  port: 8081
+
+grpc:
+  server:
+    port: 9091
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

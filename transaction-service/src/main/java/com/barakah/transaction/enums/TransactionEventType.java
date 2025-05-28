@@ -1,0 +1,11 @@
+package com.barakah.transaction.enums;
+
+public enum TransactionEventType {
+    TRANSACTION_CREATED,
+    TRANSACTION_COMPLETED,
+    TRANSACTION_FAILED,
+    TRANSACTION_CANCELLED,
+    FRAUD_DETECTED,
+    HIGH_VALUE_TRANSACTION,
+    ACCOUNT_BALANCE_LOW
+}
