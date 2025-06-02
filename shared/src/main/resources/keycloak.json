@@ -1,0 +1,52 @@
+{
+    "realm": "barakah",
+    "auth-server-url": "http://localhost:8080",
+    "resource": "banking-services",
+    "credentials": {
+        "secret": "your-client-secret"
+    },
+    "policy-enforcer": {
+        "enforcement-mode": "ENFORCING",
+        "paths": [
+            {
+                "path": "/api/users/*",
+                "methods": [
+                    {
+                        "method": "GET",
+                        "scopes": ["user:read"]
+                    },
+                    {
+                        "method": "POST",
+                        "scopes": ["user:write"]
+                    }
+                ]
+            },
+            {
+                "path": "/api/accounts/*",
+                "methods": [
+                    {
+                        "method": "GET",
+                        "scopes": ["account:read"]
+                    },
+                    {
+                        "method": "POST",
+                        "scopes": ["account:write"]
+                    }
+                ]
+            },
+            {
+                "path": "/api/transactions/*",
+                "methods": [
+                    {
+                        "method": "GET",
+                        "scopes": ["transaction:read"]
+                    },
+                    {
+                        "method": "POST",
+                        "scopes": ["transaction:write"]
+                    }
+                ]
+            }
+        ]
+    }
+}

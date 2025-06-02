@@ -77,11 +77,16 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
         String userId = headers.get(USER_ID_KEY);
         String username = headers.get(USERNAME_KEY);
         String rolesStr = headers.get(ROLES_KEY);
+        String token = headers.get(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER));
+
+        System.out.println("Service-to-service authentication details: " +
+                "userId=" + userId + ", username=" + username + ", roles=" + rolesStr + ", token=" + token);
 
         UserContext userContext = UserContext.builder()
                 .userId(userId != null ? userId : "system")
                 .username(username != null ? username : "service-call")
                 .roles(rolesStr != null ? Set.of(rolesStr.split(",")) : Set.of("SERVICE"))
+                .token(token != null ? token.replace("Bearer ", "").trim() : null)
                 .build();
 
         UserContextHolder.setContext(userContext);
@@ -94,7 +99,7 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
             ServerCall<ReqT, RespT> call,
             Metadata headers,
             ServerCallHandler<ReqT, RespT> next,
-            String method) {
+            String method) {    
 
         String authHeader = headers.get(AUTH_KEY);
         if (authHeader == null || authHeader.trim().isEmpty()) {
@@ -180,6 +185,5 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
                 || method.contains("ForgotPassword")
                 || method.contains("ResetPassword");
     }
-
 
 }

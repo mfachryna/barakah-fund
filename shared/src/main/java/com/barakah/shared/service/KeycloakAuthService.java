@@ -478,7 +478,7 @@ public class KeycloakAuthService {
         private final String errorMessage;
 
         private AuthenticationResult(boolean success, String accessToken, String refreshToken,
-                long expiresIn, UserContext userContext, String errorMessage) {
+                                     long expiresIn, UserContext userContext, String errorMessage) {
             this.success = success;
             this.accessToken = accessToken;
             this.refreshToken = refreshToken;
@@ -488,7 +488,7 @@ public class KeycloakAuthService {
         }
 
         public static AuthenticationResult success(String accessToken, String refreshToken,
-                long expiresIn, UserContext userContext) {
+                                                   long expiresIn, UserContext userContext) {
             return new AuthenticationResult(true, accessToken, refreshToken, expiresIn, userContext, null);
         }
 
@@ -506,7 +506,7 @@ public class KeycloakAuthService {
         private final String errorMessage;
 
         private RefreshResult(boolean success, String accessToken, String refreshToken,
-                long expiresIn, String errorMessage) {
+                              long expiresIn, String errorMessage) {
             this.success = success;
             this.accessToken = accessToken;
             this.refreshToken = refreshToken;

@@ -1,0 +1,343 @@
+version: "3.8"
+name: barakah-fund-dev
+
+services:
+
+    postgres:
+        image: postgres:15-alpine
+        container_name: barakah-postgres
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_DB=barakah_main
+            - POSTGRES_USER=barakah_admin
+            - POSTGRES_PASSWORD=barakah_admin_pass
+            - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./init-scripts:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U barakah_admin -d barakah_main"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    redis:
+        image: redis:7-alpine
+        container_name: barakah-redis
+        ports:
+            - "6379:6379"
+        command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    kafka:
+        image: bitnami/kafka:latest
+        container_name: barakah-kafka
+        ports:
+            - "9192:9192"
+            - "9193:9193"
+        environment:
+            KAFKA_ENABLE_KRAFT: yes
+            KAFKA_CFG_PROCESS_ROLES: broker,controller
+            KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+            KAFKA_CFG_LISTENERS: PLAINTEXT://:9192,CONTROLLER://:9193
+            KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9192
+            KAFKA_CFG_BROKER_ID: 1
+            KAFKA_CFG_NODE_ID: 1
+            KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9193
+            ALLOW_PLAINTEXT_LISTENER: yes
+            KAFKA_KRAFT_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+            KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+            KAFKA_CFG_NUM_PARTITIONS: 3
+            KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
+        volumes:
+            - kafka_data:/bitnami/kafka
+        networks:
+            - barakah-network
+        healthcheck:
+            test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9192 --list || exit 1"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+        restart: unless-stopped
+
+    keycloak:
+        image: quay.io/keycloak/keycloak:24.0.5
+        container_name: barakah-keycloak
+        ports:
+            - "8080:8080"
+        environment:
+            - KEYCLOAK_ADMIN=admin
+            - KEYCLOAK_ADMIN_PASSWORD=admin
+            - KC_DB=postgres
+            - KC_DB_URL=jdbc:postgresql://postgres:5432/barakah_main
+            - KC_DB_USERNAME=barakah_admin
+            - KC_DB_PASSWORD=barakah_admin_pass
+            - KC_HOSTNAME=localhost
+            - KC_HTTP_ENABLED=true
+            - KC_METRICS_ENABLED=true
+            - KC_HEALTH_ENABLED=true
+        command: start-dev --import-realm
+        volumes:
+            - ./barakah-realm.json:/opt/keycloak/data/import/barakah-realm.json:ro
+        depends_on:
+            postgres:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080'"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 90s 
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    eureka-server:
+        build:
+            context: ..
+            dockerfile: eureka-server/Dockerfile
+        container_name: barakah-eureka-server
+        ports:
+            - "8761:8761"
+        environment:
+            - SPRING_PROFILES_ACTIVE=docker
+            - SPRING_CLOUD_CONFIG_ENABLED=false
+            - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+            
+            - SPRING_CLOUD_VAULT_HOST=vault
+            - SPRING_CLOUD_VAULT_PORT=8200
+            - SPRING_CLOUD_VAULT_SCHEME=http
+            - SPRING_CLOUD_VAULT_TOKEN=root-token
+            - JAVA_OPTS=-Xmx512m -Xms256m
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    user-service:
+        build:
+            context: ..
+            dockerfile: user-service/Dockerfile
+        container_name: barakah-user-service
+        ports:
+            - "8081:8081"
+            - "9091:9091"
+        environment:
+            - SPRING_PROFILES_ACTIVE=docker
+            - SPRING_CLOUD_CONFIG_ENABLED=false
+            - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+            - VAULT_ENABLED=false
+            - SPRING_CLOUD_VAULT_HOST=vault
+            - SPRING_CLOUD_VAULT_PORT=8200
+            - SPRING_CLOUD_VAULT_SCHEME=http
+            - SPRING_CLOUD_VAULT_TOKEN=root-token
+            - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+            - JAVA_OPTS=-Xmx1024m -Xms512m
+        volumes:
+            - user_service_logs:/app/logs
+        depends_on:
+            postgres:
+                condition: service_healthy
+            keycloak:
+                condition: service_healthy
+            eureka-server:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8081/user-service/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 120s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    account-service:
+        build:
+            context: ..
+            dockerfile: account-service/Dockerfile
+        container_name: barakah-account-service
+        ports:
+            - "8082:8082"
+            - "9092:9092"
+        environment:
+            - SPRING_PROFILES_ACTIVE=docker
+            - SPRING_CLOUD_CONFIG_ENABLED=false
+            - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+            - VAULT_ENABLED=false
+            - SPRING_CLOUD_VAULT_HOST=vault
+            - SPRING_CLOUD_VAULT_PORT=8200
+            - SPRING_CLOUD_VAULT_SCHEME=http
+            - SPRING_CLOUD_VAULT_TOKEN=root-token
+            - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+            - JAVA_OPTS=-Xmx1024m -Xms512m
+        volumes:
+            - account_service_logs:/app/logs
+        depends_on:
+            postgres:
+                condition: service_healthy
+            keycloak:
+                condition: service_healthy
+            eureka-server:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8082/account-service/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 120s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    transaction-service:
+        build:
+            context: ..
+            dockerfile: transaction-service/Dockerfile
+        container_name: barakah-transaction-service
+        ports:
+            - "8083:8083"
+            - "9093:9093"
+        environment:
+            - SPRING_PROFILES_ACTIVE=docker
+            - SPRING_CLOUD_CONFIG_ENABLED=false
+            - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+            - VAULT_ENABLED=false
+            - SPRING_CLOUD_VAULT_ENABLED=false
+            - SPRING_CLOUD_VAULT_HOST=vault
+            - SPRING_CLOUD_VAULT_PORT=8200
+            - SPRING_CLOUD_VAULT_SCHEME=http
+            - SPRING_CLOUD_VAULT_TOKEN=root-token
+            - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+            - REDIS_DATABASE=0
+            - REDIS_PASSWORD=
+            - JAVA_OPTS=-Xmx1024m -Xms512m
+        volumes:
+            - transaction_service_logs:/app/logs
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis: 
+                condition: service_healthy
+            keycloak:
+                condition: service_healthy
+            eureka-server:
+                condition: service_healthy
+            kafka:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8083/transaction-service/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 120s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    gateway-service:
+        build:
+            context: ..
+            dockerfile: gateway-service/Dockerfile
+        container_name: barakah-gateway-service
+        ports:
+            - "8070:8070"
+            - "9090:9090"
+        environment:
+            - SPRING_PROFILES_ACTIVE=docker
+            - SPRING_CLOUD_CONFIG_ENABLED=false
+            - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+            - VAULT_ENABLED=false
+            - SPRING_CLOUD_VAULT_HOST=vault
+            - SPRING_CLOUD_VAULT_PORT=8200
+            - SPRING_CLOUD_VAULT_SCHEME=http
+            - SPRING_CLOUD_VAULT_TOKEN=root-token
+            - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+            - JAVA_OPTS=-Xmx1024m -Xms512m
+        volumes:
+            - gateway_service_logs:/app/logs
+        depends_on:
+            eureka-server:
+                condition: service_healthy
+            keycloak:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8070/actuator/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 120s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    kafka-ui:
+        image: provectuslabs/kafka-ui:latest
+        container_name: barakah-kafka-ui
+        ports:
+            - "8181:8080"
+        environment:
+            KAFKA_CLUSTERS_0_NAME: barakah-cluster
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9192
+            KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
+        depends_on:
+            kafka:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+networks:
+    barakah-network:
+        driver: bridge
+        name: barakah-network
+
+volumes:
+    vault_data:
+        driver: local
+    vault_logs:
+        driver: local
+    redis_data:
+        driver: local
+    postgres_data:
+        driver: local
+    kafka_data:
+        driver: local
+    user_service_logs:
+        driver: local
+    account_service_logs:
+        driver: local
+    transaction_service_logs:
+        driver: local
+    gateway_service_logs:
+        driver: local

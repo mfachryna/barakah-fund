@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package barakah.notification.v1;
+
+option java_multiple_files = true;
+option java_package = "com.barakah.notification.proto.v1";
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+enum NotificationType {
+  TRANSACTION = 0;
+  ACCOUNT = 1;
+  SECURITY = 2;
+}
+
+enum NotificationChannel {
+  EMAIL = 0;
+  SMS = 1;
+  IN_APP = 2;
+}
+
+message Notification {
+  string notification_id = 1;
+  string user_id = 2;
+  NotificationType type = 3;
+  NotificationChannel channel = 4;
+  string title = 5;
+  string content = 6;
+  bool read = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message SendNotificationRequest {
+  string user_id = 1;
+  NotificationType type = 2;
+  NotificationChannel channel = 3;
+  string title = 4;
+  string content = 5;
+}
+
+message SendNotificationResponse {
+  Notification notification = 1;
+  string message = 2;
+}
+
+message ListNotificationsRequest {
+  string user_id = 1;
+  barakah.common.v1.PageRequest page_request = 2;
+  bool unread_only = 3;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+  barakah.common.v1.PageResponse page_response = 2;
+}
+
+message MarkAsReadRequest {
+  string notification_id = 1;
+}
+
+message MarkAsReadResponse {
+  bool success = 1;
+}
+
+service NotificationService {
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
+}

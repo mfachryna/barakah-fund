@@ -7,17 +7,19 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 
-import org.springframework.context.annotation.Primary;
-
 @Configuration
 public class RestTemplateConfig {
 
-   @Bean
-   @Primary
-   public RestTemplate restTemplate() {
-       return new RestTemplateBuilder()
-               .setConnectTimeout(Duration.ofSeconds(10))
-               .setReadTimeout(Duration.ofSeconds(30))
-               .build();
-   }
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+        return builder
+                .setConnectTimeout(Duration.ofSeconds(5))
+                .setReadTimeout(Duration.ofSeconds(10))
+                .build();
+    }
+
+    @Bean
+    public RestTemplateBuilder restTemplateBuilder() {
+        return new RestTemplateBuilder();
+    }
 }

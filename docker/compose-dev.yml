@@ -158,12 +158,91 @@ services:
             - barakah-network
         restart: unless-stopped
 
+    kafka:
+        image: bitnami/kafka:latest
+        container_name: kafka
+        ports:
+            - "9192:9192"
+            - "9193:9193"
+        environment:
+            KAFKA_ENABLE_KRAFT: yes
+            KAFKA_CFG_PROCESS_ROLES: broker,controller
+            KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+            KAFKA_CFG_LISTENERS: PLAINTEXT://:9192,CONTROLLER://:9193
+            KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9192
+            
+            KAFKA_CFG_BROKER_ID: 1
+            KAFKA_CFG_NODE_ID: 1
+            KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@localhost:9193
+            
+            ALLOW_PLAINTEXT_LISTENER: yes
+            KAFKA_KRAFT_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+            
+            KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+            KAFKA_CFG_NUM_PARTITIONS: 1
+            KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
+        networks:
+            - barakah-network
+        healthcheck:
+            test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9192 --list || exit 1"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+        restart: unless-stopped
+
+    kafka-ui:
+        image: provectuslabs/kafka-ui:latest
+        container_name: barakah-kafka-ui
+        ports:
+            - "8181:8080"
+        environment:
+            KAFKA_CLUSTERS_0_NAME: barakah-cluster
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: localhost:9192
+            KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
+        depends_on:
+            kafka:
+                condition: service_healthy
+        network_mode: host
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8080/actuator/health || exit 1",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        restart: unless-stopped
+
+    redis:
+        image: redis:7-alpine
+        container_name: barakah-redis
+        ports:
+            - "6379:6379"
+        command: redis-server --appendonly yes
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
 networks:
     barakah-network:
         driver: bridge
         name: barakah-network
 
 volumes:
+    redis_data:
+        driver: local
     postgres_data:
         driver: local
     config_data:

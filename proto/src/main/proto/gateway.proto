@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package barakah.gateway.v1;
+
+option java_package = "com.barakah.gateway.proto.v1";
+option java_multiple_files = true;
+option java_outer_classname = "GatewayServiceProto";
+
+import "common.proto";
+import "user.proto";
+import "account.proto";
+import "transaction.proto";
+import "auth.proto";
+
+// Gateway aggregation service - exposes unified API
+service GatewayService {
+  // Auth operations
+  rpc Login(barakah.auth.v1.LoginRequest) returns (barakah.auth.v1.LoginResponse);
+  rpc Register(barakah.auth.v1.RegisterRequest) returns (barakah.auth.v1.RegisterResponse);
+  rpc ValidateToken(barakah.auth.v1.ValidateTokenRequest) returns (barakah.auth.v1.ValidateTokenResponse);
+  rpc RefreshToken(barakah.auth.v1.RefreshTokenRequest) returns (barakah.auth.v1.RefreshTokenResponse);
+  rpc Logout(barakah.auth.v1.LogoutRequest) returns (barakah.auth.v1.LogoutResponse);
+
+  // User operations
+  rpc GetCurrentUser(barakah.common.v1.Empty) returns (barakah.user.v1.GetUserResponse);
+  rpc GetUser(barakah.user.v1.GetUserRequest) returns (barakah.user.v1.GetUserResponse);
+  rpc CreateUser(barakah.user.v1.CreateUserRequest) returns (barakah.user.v1.CreateUserResponse);
+  rpc UpdateUser(barakah.user.v1.UpdateUserRequest) returns (barakah.user.v1.UpdateUserResponse);
+  rpc ListUsers(barakah.user.v1.ListUsersRequest) returns (barakah.user.v1.ListUsersResponse);
+
+  // Account operations
+  rpc CreateAccount(barakah.account.v1.CreateAccountRequest) returns (barakah.account.v1.CreateAccountResponse);
+  rpc GetAccount(barakah.account.v1.GetAccountRequest) returns (barakah.account.v1.GetAccountResponse);
+  rpc ListAccounts(barakah.account.v1.ListAccountsRequest) returns (barakah.account.v1.ListAccountsResponse);
+  rpc GetBalance(barakah.account.v1.GetBalanceRequest) returns (barakah.account.v1.GetBalanceResponse);
+  rpc CreditAccount(barakah.account.v1.CreditAccountRequest) returns (barakah.account.v1.CreditAccountResponse);
+  rpc DebitAccount(barakah.account.v1.DebitAccountRequest) returns (barakah.account.v1.DebitAccountResponse);
+
+  // Transaction operations
+  rpc CreateTransaction(barakah.transaction.v1.CreateTransactionRequest) returns (barakah.transaction.v1.CreateTransactionResponse);
+  rpc GetTransaction(barakah.transaction.v1.GetTransactionRequest) returns (barakah.transaction.v1.GetTransactionResponse);
+  rpc ListTransactions(barakah.transaction.v1.ListTransactionsRequest) returns (barakah.transaction.v1.ListTransactionsResponse);
+  rpc GetTransactionsByAccount(barakah.transaction.v1.GetTransactionsByAccountRequest) returns (barakah.transaction.v1.GetTransactionsByAccountResponse);
+
+  // Aggregated operations (Gateway-specific)
+  rpc GetUserDashboard(GetUserDashboardRequest) returns (GetUserDashboardResponse);
+  rpc TransferMoney(TransferMoneyRequest) returns (TransferMoneyResponse);
+}
+
+// Gateway-specific messages
+message GetUserDashboardRequest {
+  string user_id = 1;
+}
+
+message GetUserDashboardResponse {
+  barakah.user.v1.User user = 1;
+  repeated barakah.account.v1.Account accounts = 2;
+  repeated barakah.transaction.v1.Transaction recent_transactions = 3;
+  string total_balance = 4;
+  int32 total_accounts = 5;
+  int32 pending_transactions = 6;
+}
+
+message TransferMoneyRequest {
+  string from_account_id = 1;
+  string to_account_id = 2;
+  int64 amount = 3;
+  string description = 4;
+  string reference = 5;
+}
+
+message TransferMoneyResponse {
+  string transaction_id = 1;
+  string status = 2;
+  string message = 3;
+  barakah.transaction.v1.Transaction transaction = 4;
+}

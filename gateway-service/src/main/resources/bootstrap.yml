@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: gateway-service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  cloud:
+    config:
+      enabled: false
+      fail-fast: false
+    vault:
+      enabled: ${SPRING_CLOUD_VAULT_ENABLED:false}
+      host: ${SPRING_CLOUD_VAULT_HOST:localhost}
+      port: ${SPRING_CLOUD_VAULT_PORT:8200}
+      scheme: ${SPRING_CLOUD_VAULT_SCHEME:http}
+      authentication: TOKEN
+      token: ${SPRING_CLOUD_VAULT_TOKEN:root-token}
+
+# Default local development settings
+server:
+  port: 8081
+
+grpc:
+  server:
+    port: 9091
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG
+    org.springframework.web.client: DEBUG

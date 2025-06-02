@@ -14,6 +14,12 @@ import java.time.ZoneOffset;
 @Component
 public class TransactionProtoMapper {
 
+    private final TransactionMapper transactionMapper;
+
+    public TransactionProtoMapper(TransactionMapper transactionMapper) {
+        this.transactionMapper = transactionMapper;
+    }
+
     public TransferRequest toDtoTransferRequest(
             CreateTransactionRequest protoRequest) {
 
@@ -36,12 +42,14 @@ public class TransactionProtoMapper {
     }
 
     public Transaction toProtoTransaction(TransactionResponse response) {
+
         Transaction.Builder builder = Transaction.newBuilder()
                 .setTransactionId(response.getId())
                 .setFromAccountId(response.getFromAccountId())
                 .setToAccountId(response.getToAccountId())
                 .setAmount(response.getAmount().longValue())
-                .setStatus(mapStatus(response.getStatus()));
+                .setStatus( mapStatus(response.getStatus()));
+//                .setCreatedBy(response.getCreatedBy() != null ? response.getCreatedBy() : "")
 //                .setCreatedBy(response.getCreatedBy() != null ? response.getCreatedBy() : "");
 
         if (response.getDescription() != null) {

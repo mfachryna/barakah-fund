@@ -20,7 +20,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <!-- Use EXACT same versions as user-service -->
+
         <spring-boot.version>3.4.5</spring-boot.version>
         <spring-cloud.version>2024.0.0</spring-cloud.version>
         <postgresql.version>42.7.2</postgresql.version>
@@ -32,9 +32,10 @@
         <lombok.version>1.18.32</lombok.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
     </properties>
 
-    <!-- SAME dependency management as user-service -->
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -73,7 +74,22 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Spring Boot Starters -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
@@ -102,7 +118,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <!-- Spring Cloud Bootstrap -->
+
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
@@ -113,14 +129,14 @@
             <artifactId>spring-cloud-starter-config</artifactId>
         </dependency>
 
-        <!-- Database -->
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
         </dependency>
 
-        <!-- Flyway -->
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
@@ -134,12 +150,11 @@
         </dependency>
 
 
-        <!-- Micrometer for Metrics -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
-        <!-- gRPC Dependencies - SAME as user-service -->
+
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
@@ -158,21 +173,31 @@
             <version>${grpc-spring-boot.version}</version>
         </dependency>
 
-        <!-- Proto Library -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>com.barakah</groupId>
             <artifactId>proto</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
-        <!-- Shared Auth Library -->
+
         <dependency>
             <groupId>com.barakah</groupId>
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>
 
-        <!-- Keycloak Dependencies - SAME versions as user-service -->
+
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client</artifactId>
@@ -185,7 +210,7 @@
             <version>${keycloak.version}</version>
         </dependency>
 
-        <!-- Protobuf -->
+
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -197,14 +222,14 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- MapStruct -->
+
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
 
-        <!-- Utilities -->
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -212,7 +237,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Testing -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -253,7 +278,7 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot Maven Plugin -->
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -267,7 +292,7 @@
                 </configuration>
             </plugin>
 
-            <!-- SAME compiler plugin configuration as user-service -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -295,7 +320,6 @@
             </plugin>
 
 
-            <!-- OS Maven Plugin (required for protobuf) -->
             <plugin>
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>

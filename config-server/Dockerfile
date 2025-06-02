@@ -1,38 +1,35 @@
-FROM maven:3.9.9-eclipse-temurin-17 AS builder
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
-WORKDIR /app
+WORKDIR /workspace
 
+# Copy and build config server
 COPY pom.xml .
 COPY src ./src
 
-RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests
+# Download dependencies
+RUN mvn dependency:go-offline -B
 
-FROM eclipse-temurin:17-jre
+# Build the service
+RUN mvn clean package -DskipTests -B
+
+# Runtime stage
+FROM openjdk:17-jdk-slim
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd -r configserver && useradd -r -g configserver configserver
-
 WORKDIR /app
 
-RUN mkdir -p /app/config
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=builder /workspace/target/config-server-*.jar app.jar
 
-RUN chown -R configserver:configserver /app
+RUN mkdir -p /app/logs && chown -R appuser:appuser /app
 
-USER configserver
+USER appuser
 
 EXPOSE 8888
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8888/actuator/health || exit 1
 
-ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-ENV SPRING_PROFILES_ACTIVE=native,security
-ENV SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=classpath:/config/,file:/app/config/
-ENV SPRING_CLOUD_CONFIG_SERVER_GIT_URI=""
-ENV SPRING_CLOUD_CONFIG_SERVER_BOOTSTRAP=false
-ENV SPRING_CLOUD_CONFIG_SERVER_ACCEPT_EMPTY=true
-
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]

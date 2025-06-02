@@ -6,6 +6,10 @@ import com.barakah.transaction.repository.TransactionCategoryRepository;
 import com.barakah.shared.context.UserContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,25 +22,25 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class TransactionCategoryService {
-    
+
     private final TransactionCategoryRepository categoryRepository;
-    
+
     @Transactional
+    @CachePut(value = "transaction-categories", key = "#result.categoryId")
+    @CacheEvict(value = {"active-categories", "system-categories"}, allEntries = true)
     public TransactionCategory createCategory(String name, String description, String icon, String color) {
         log.info("Creating transaction category: {}", name);
-        
-        
+
         if (name == null || name.trim().isEmpty()) {
             throw new TransactionExceptions.InvalidTransactionException("Category name is required");
         }
-        
-        
+
         if (categoryRepository.existsByName(name.trim())) {
             throw new TransactionExceptions.InvalidTransactionException("Category name already exists: " + name);
         }
-        
+
         String currentUserId = UserContextHolder.getCurrentUserId();
-        
+
         TransactionCategory category = TransactionCategory.builder()
                 .name(name.trim())
                 .description(description)
@@ -46,105 +50,118 @@ public class TransactionCategoryService {
                 .isSystem(false)
                 .createdBy(currentUserId)
                 .build();
-        
+
         TransactionCategory savedCategory = categoryRepository.save(category);
         log.info("Transaction category created: {} with ID: {}", name, savedCategory.getCategoryId());
-        
+
         return savedCategory;
     }
-    
+
     @Transactional
-    public TransactionCategory updateCategory(String categoryId, String name, String description, 
-                                            String icon, String color, Boolean isActive) {
+    @Caching(
+        put = @CachePut(value = "transaction-categories", key = "#categoryId"),
+        evict = {
+            @CacheEvict(value = "active-categories", allEntries = true),
+            @CacheEvict(value = "system-categories", allEntries = true)
+        }
+    )
+    public TransactionCategory updateCategory(String categoryId, String name, String description,
+            String icon, String color, Boolean isActive) {
         log.info("Updating transaction category: {}", categoryId);
-        
+
         TransactionCategory category = getCategoryById(categoryId);
-        
-        
+
         if (category.getIsSystem()) {
             throw new TransactionExceptions.SystemCategoryException("modify");
         }
-        
-        
+
         if (name != null && !name.trim().isEmpty()) {
-            
             if (!category.getName().equals(name.trim()) && categoryRepository.existsByName(name.trim())) {
                 throw new TransactionExceptions.InvalidTransactionException("Category name already exists: " + name);
             }
             category.setName(name.trim());
         }
-        
+
         if (description != null) {
             category.setDescription(description);
         }
-        
+
         if (icon != null) {
             category.setIcon(icon);
         }
-        
+
         if (color != null) {
             category.setColor(color);
         }
-        
+
         if (isActive != null) {
             category.setIsActive(isActive);
         }
-        
+
         TransactionCategory updatedCategory = categoryRepository.save(category);
         log.info("Transaction category updated: {}", categoryId);
-        
+
         return updatedCategory;
     }
-    
+
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "transaction-categories", key = "#categoryId"),
+        @CacheEvict(value = "active-categories", allEntries = true),
+        @CacheEvict(value = "system-categories", allEntries = true)
+    })
     public void deleteCategory(String categoryId) {
         log.info("Deleting transaction category: {}", categoryId);
-        
+
         TransactionCategory category = getCategoryById(categoryId);
-        
-        
+
         if (category.getIsSystem()) {
             throw new TransactionExceptions.SystemCategoryException("delete");
         }
-        
-        
+
         long transactionCount = categoryRepository.countTransactionsByCategoryId(categoryId);
         if (transactionCount > 0) {
             throw new TransactionExceptions.CategoryInUseException(categoryId);
         }
-        
+
         categoryRepository.delete(category);
         log.info("Transaction category deleted: {}", categoryId);
     }
-    
+
     @Transactional(readOnly = true)
+    @Cacheable(value = "transaction-categories", key = "#categoryId")
     public TransactionCategory getCategoryById(String categoryId) {
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new TransactionExceptions.CategoryNotFoundException(categoryId));
     }
-    
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "active-categories")
+    public List<TransactionCategory> getActiveCategories() {
+        log.debug("Fetching active categories from database");
+        return categoryRepository.findByIsActiveTrue();
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "system-categories")
+    public List<TransactionCategory> getSystemCategories() {
+        log.debug("Fetching system categories from database");
+        return categoryRepository.findByIsSystemTrue();
+    }
+
     @Transactional(readOnly = true)
     public Page<TransactionCategory> listCategories(boolean includeInactive, boolean includeSystem, Pageable pageable) {
         return categoryRepository.findCategoriesWithFilters(includeInactive, includeSystem, pageable);
     }
-    
-    @Transactional(readOnly = true)
-    public List<TransactionCategory> getActiveCategories() {
-        return categoryRepository.findByIsActiveTrue();
-    }
-    
-    @Transactional(readOnly = true)
-    public List<TransactionCategory> getSystemCategories() {
-        return categoryRepository.findByIsSystemTrue();
-    }
-    
+
     /**
      * Initialize default system categories
      */
     @Transactional
+    @CacheEvict(value = {"active-categories", "system-categories"}, allEntries = true)
     public void initializeSystemCategories() {
         log.info("Initializing system transaction categories");
-        
+
         createSystemCategoryIfNotExists("Transfer", "Money transfer between accounts", "transfer", "#2196F3");
         createSystemCategoryIfNotExists("Deposit", "Money deposit", "deposit", "#4CAF50");
         createSystemCategoryIfNotExists("Withdrawal", "Money withdrawal", "withdrawal", "#FF9800");
@@ -162,10 +179,10 @@ public class TransactionCategoryService {
         createSystemCategoryIfNotExists("Investment", "Stocks, bonds, etc.", "investment", "#FF9800");
         createSystemCategoryIfNotExists("Salary", "Monthly salary", "salary", "#4CAF50");
         createSystemCategoryIfNotExists("Other", "Miscellaneous transactions", "other", "#9E9E9E");
-        
+
         log.info("System transaction categories initialized");
     }
-    
+
     private void createSystemCategoryIfNotExists(String name, String description, String icon, String color) {
         if (!categoryRepository.existsByName(name)) {
             TransactionCategory category = TransactionCategory.builder()
@@ -177,7 +194,7 @@ public class TransactionCategoryService {
                     .isSystem(true)
                     .createdBy("SYSTEM")
                     .build();
-            
+
             categoryRepository.save(category);
             log.debug("Created system category: {}", name);
         }
