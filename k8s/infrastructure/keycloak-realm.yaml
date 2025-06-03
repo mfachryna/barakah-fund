@@ -1,0 +1,111 @@
+# k8s/infrastructure/keycloak-realm.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: keycloak-realm-config
+    namespace: barakah-fund
+data:
+    barakah-realm.json: |
+        {
+          "realm": "barakah",
+          "enabled": true,
+          "displayName": "Barakah Fund",
+          "clients": [
+            {
+              "clientId": "banking-services",
+              "enabled": true,
+              "clientAuthenticatorType": "client-secret",
+              "secret": "banking-services-client-secret",
+              "bearerOnly": false,
+              "consentRequired": false,
+              "standardFlowEnabled": true,
+              "implicitFlowEnabled": false,
+              "directAccessGrantsEnabled": true,
+              "serviceAccountsEnabled": true,
+              "publicClient": false,
+              "frontchannelLogout": false,
+              "protocol": "openid-connect",
+              "redirectUris": ["http://localhost:8070/*"],
+              "webOrigins": ["http://localhost:8070"],
+              "authorizationServicesEnabled": true,
+              "authorizationSettings": {
+                "allowRemoteResourceManagement": true,
+                "policyEnforcementMode": "ENFORCING",
+                "resources": [
+                  {
+                    "name": "User Resource",
+                    "uri": "/api/users/*",
+                    "type": "http://banking-services/user",
+                    "scopes": [
+                      {"name": "user:read"},
+                      {"name": "user:write"}
+                    ]
+                  },
+                  {
+                    "name": "Account Resource",
+                    "uri": "/api/accounts/*",
+                    "type": "http://banking-services/account",
+                    "scopes": [
+                      {"name": "account:read"},
+                      {"name": "account:write"}
+                    ]
+                  },
+                  {
+                    "name": "Transaction Resource",
+                    "uri": "/api/transactions/*",
+                    "type": "http://banking-services/transaction",
+                    "scopes": [
+                      {"name": "transaction:read"},
+                      {"name": "transaction:write"}
+                    ]
+                  }
+                ],
+                "policies": [
+                  {
+                    "name": "Default Policy",
+                    "description": "A policy that grants access only for users within this realm",
+                    "type": "role",
+                    "logic": "POSITIVE",
+                    "decisionStrategy": "UNANIMOUS",
+                    "config": {
+                      "roles": "[{\"id\":\"user\",\"required\":false}]"
+                    }
+                  }
+                ],
+                "scopes": [
+                  {"name": "user:read"},
+                  {"name": "user:write"},
+                  {"name": "account:read"},
+                  {"name": "account:write"},
+                  {"name": "transaction:read"},
+                  {"name": "transaction:write"}
+                ]
+              }
+            }
+          ],
+          "roles": {
+            "realm": [
+              {
+                "name": "USER",
+                "description": "Regular user role"
+              },
+              {
+                "name": "ADMIN",
+                "description": "Admin role"
+              }
+            ]
+          },
+          "users": [
+            {
+              "username": "admin",
+              "enabled": true,
+              "credentials": [
+                {
+                  "type": "password",
+                  "value": "admin123"
+                }
+              ],
+              "realmRoles": ["ADMIN"]
+            }
+          ]
+        }

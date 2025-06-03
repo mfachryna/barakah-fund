@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: user-service
+    namespace: barakah-fund
+    labels:
+        app: user-service
+spec:
+    replicas: 2
+    selector:
+        matchLabels:
+            app: user-service
+    template:
+        metadata:
+            labels:
+                app: user-service
+            annotations:
+                prometheus.io/scrape: "true"
+                prometheus.io/port: "8081"
+                prometheus.io/path: "/user-service/actuator/prometheus"
+        spec:
+            serviceAccountName: spring-cloud-kubernetes
+            containers:
+                - name: user-service
+                  image: barakah/user-service:latest
+                  imagePullPolicy: Never
+                  ports:
+                      - containerPort: 8081
+                        name: http
+                      - containerPort: 9091
+                        name: grpc
+
+                  envFrom:
+                      - configMapRef:
+                            name: spring-common-config
+                      - configMapRef:
+                            name: user-service-config
+                  env:
+                      - name: SPRING_CLOUD_VAULT_ENABLED
+                        value: "false"
+                      - name: SPRING_CLOUD_CONFIG_ENABLED
+                        value: "false"
+                      - name: SPRING_CLOUD_BOOTSTRAP_ENABLED
+                        value: "false"
+                      - name: SPRING_DATASOURCE_URL
+                        value: "jdbc:postgresql://postgres-service:5432/barakah_users"
+                      - name: SPRING_DATASOURCE_USERNAME
+                        valueFrom:
+                            secretKeyRef:
+                                name: user-service-db-secret
+                                key: DB_USERNAME
+                      - name: SPRING_DATASOURCE_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: user-service-db-secret
+                                key: DB_PASSWORD
+                      - name: KEYCLOAK_CREDENTIALS_SECRET
+                        valueFrom:
+                            secretKeyRef:
+                                name: jwt-secret
+                                key: KEYCLOAK_CLIENT_SECRET
+                      - name: EUREKA_INSTANCE_INSTANCE_ID
+                        value: "user-service:$(HOSTNAME)"
+                      - name: HOSTNAME
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: metadata.name
+                      - name: KEYCLOAK_ADMIN_USERNAME
+                        valueFrom:
+                            secretKeyRef:
+                                name: user-service-secrets
+                                key: KEYCLOAK_ADMIN_USERNAME
+                      - name: KEYCLOAK_ADMIN_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: user-service-secrets
+                                key: KEYCLOAK_ADMIN_PASSWORD
+                  resources:
+                      requests:
+                          memory: "512Mi"
+                          cpu: "250m"
+                      limits:
+                          memory: "1Gi"
+                          cpu: "500m"
+
+                  readinessProbe:
+                      httpGet:
+                          path: /user-service/actuator/health/readiness
+                          port: 8081
+                      initialDelaySeconds: 60
+                      periodSeconds: 10
+                      timeoutSeconds: 5
+                      failureThreshold: 3
+
+                  livenessProbe:
+                      httpGet:
+                          path: /user-service/actuator/health/liveness
+                          port: 8081
+                      initialDelaySeconds: 90
+                      periodSeconds: 15
+                      timeoutSeconds: 5
+                      failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: user-service
+    namespace: barakah-fund
+    labels:
+        app: user-service
+spec:
+    type: ClusterIP
+    ports:
+        - port: 8081
+          targetPort: 8081
+          name: http
+        - port: 9091
+          targetPort: 9091
+          name: grpc
+    selector:
+        app: user-service

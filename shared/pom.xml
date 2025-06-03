@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.barakah</groupId>
     <artifactId>shared</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    
+
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        
+
         <spring-boot.version>3.4.2</spring-boot.version>
         <grpc.version>1.72.0</grpc.version>
         <keycloak.version>24.0.5</keycloak.version>
-		<lombok.version>1.18.32</lombok.version>
+        <lombok.version>1.18.32</lombok.version>
         <grpc-spring-boot.version>3.1.0.RELEASE</grpc-spring-boot.version>
     </properties>
-    
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -32,7 +31,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    
+
     <dependencies>
         <!-- Spring Boot Core -->
         <dependency>
@@ -78,33 +77,38 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        
+
         <!-- gRPC -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-api</artifactId>
             <version>${grpc.version}</version>
         </dependency>
-        
+
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
             <version>${grpc.version}</version>
         </dependency>
-        
+
         <!-- Keycloak Authorization Client -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-client</artifactId>
             <version>${keycloak.version}</version>
         </dependency>
-        
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
         <!-- AspectJ for AOP -->
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
         </dependency>
-        
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -141,7 +145,7 @@
             <artifactId>spring-data-redis</artifactId>
         </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>

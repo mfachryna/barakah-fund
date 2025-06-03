@@ -1,0 +1,36 @@
+# spring:
+#     datasource:
+#         url: jdbc:postgresql://postgres:5432/barakah_transactions
+#         username: barakah_admin # Override the default
+#         password: barakah_admin_pass # Override the default
+
+#     redis:
+#         host: redis # Force Redis host
+#         port: 6379
+#         timeout: 5000
+#         database: 0
+#         password: ""
+#         lettuce:
+#             pool:
+#                 max-active: 8
+#                 max-wait: 100
+#                 max-idle: 8
+#                 min-idle: 0
+#             shutdown-timeout: 2000
+
+#     cache:
+#         type: redis
+
+#     kafka:
+#         bootstrap-servers: kafka:9192
+
+#     cloud:
+#         config:
+#             enabled: false
+#         vault:
+#             enabled: false
+
+# logging:
+#     level:
+#         org.springframework.data.redis: DEBUG
+#         io.lettuce: DEBUG

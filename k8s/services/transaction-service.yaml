@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: transaction-service
+    namespace: barakah-fund
+    labels:
+        app: transaction-service
+spec:
+    replicas: 2
+    selector:
+        matchLabels:
+            app: transaction-service
+    template:
+        metadata:
+            labels:
+                app: transaction-service
+        spec:
+            serviceAccountName: spring-cloud-kubernetes
+            containers:
+                - name: transaction-service
+                  image: barakah/transaction-service:latest
+                  imagePullPolicy: Never
+                  ports:
+                      - containerPort: 8083
+                        name: http
+                      - containerPort: 9093
+                        name: grpc
+
+                  envFrom:
+                      - configMapRef:
+                            name: spring-common-config
+                      - configMapRef:
+                            name: transaction-service-config
+
+                  env:
+                      - name: SPRING_DATASOURCE_URL
+                        value: "jdbc:postgresql://postgres-service:5432/barakah_transactions"
+                      - name: SPRING_DATASOURCE_USERNAME
+                        valueFrom:
+                            secretKeyRef:
+                                name: transaction-service-db-secret
+                                key: DB_USERNAME
+                      - name: SPRING_DATASOURCE_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: transaction-service-db-secret
+                                key: DB_PASSWORD
+
+                      - name: SERVER_PORT
+                        value: "8083"
+                      - name: GRPC_SERVER_PORT
+                        value: "9093"
+                      - name: SERVER_SERVLET_CONTEXT_PATH
+                        value: "/transaction-service"
+                      - name: KEYCLOAK_CREDENTIALS_SECRET
+                        valueFrom:
+                            secretKeyRef:
+                                name: jwt-secret
+                                key: KEYCLOAK_CLIENT_SECRET
+
+                  resources:
+                      requests:
+                          memory: "512Mi"
+                          cpu: "250m"
+                      limits:
+                          memory: "1Gi"
+                          cpu: "500m"
+
+                  readinessProbe:
+                      httpGet:
+                          path: /transaction-service/actuator/health/readiness
+                          port: 8083
+                      initialDelaySeconds: 60
+                      periodSeconds: 5
+
+                  livenessProbe:
+                      httpGet:
+                          path: /transaction-service/actuator/health/liveness
+                          port: 8083
+                      initialDelaySeconds: 90
+                      periodSeconds: 10
+
+                  startupProbe:
+                      httpGet:
+                          path: /transaction-service/actuator/health
+                          port: http
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                      timeoutSeconds: 5
+                      failureThreshold: 12
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: transaction-service
+    namespace: barakah-fund
+spec:
+    type: ClusterIP
+    ports:
+        - port: 8083
+          targetPort: 8083
+          protocol: TCP
+          name: http
+        - port: 9093
+          targetPort: 9093
+          protocol: TCP
+          name: grpc
+    selector:
+        app: transaction-service

@@ -1,35 +1,48 @@
 spring:
-  application:
-    name: gateway-service
-  config:
-    import: "optional:configserver:http://localhost:8888"
-  cloud:
-    config:
-      enabled: false
-      fail-fast: false
-    vault:
-      enabled: ${SPRING_CLOUD_VAULT_ENABLED:false}
-      host: ${SPRING_CLOUD_VAULT_HOST:localhost}
-      port: ${SPRING_CLOUD_VAULT_PORT:8200}
-      scheme: ${SPRING_CLOUD_VAULT_SCHEME:http}
-      authentication: TOKEN
-      token: ${SPRING_CLOUD_VAULT_TOKEN:root-token}
+    application:
+        name: gateway-servic
+    cloud:
+        config:
+            enabled: false
+        vault:
+            enabled: false
 
-# Default local development settings
-server:
-  port: 8081
+# spring:
+#     application:
+#         name: gateway-service
+#     # config:
+#         # import: "optional:configserver:http://localhost:8888"
+#         # import: "vault://"
+#     cloud:
+#         config:
+#             enabled: false
+#             fail-fast: false
+#         vault:
+#             # kv:
+#             #     backend: kv
+#             enabled: ${SPRING_CLOUD_VAULT_ENABLED:false}
+#             uri: ${SPRING_CLOUD_VAULT_HOST:localhost}
+#             host: ${SPRING_CLOUD_VAULT_URI:http://127.0.0.1:8200}
+#             port: ${SPRING_CLOUD_VAULT_PORT:8200}
+#             scheme: ${SPRING_CLOUD_VAULT_SCHEME:http}
+#             authentication: TOKEN
+#             token: ${SPRING_CLOUD_VAULT_TOKEN:root-token}
 
-grpc:
-  server:
-    port: 9091
+# # # Default local development settings
+# # server:
+# # port: 8081
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+# # grpc:
+# #     server:
+# #         port: 9091
 
-logging:
-  level:
-    org.springframework.cloud.config: DEBUG
-    org.springframework.web.client: DEBUG
+# # management:
+# #     endpoints:
+# #         web:
+# #             exposure:
+# #                 include: health,info
+
+# # logging:
+# #     level:
+# #         org.springframework.cloud.config: DEBUG
+# #         org.springframework.web.client: DEBUG

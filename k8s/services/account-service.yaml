@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: account-service
+    namespace: barakah-fund
+    labels:
+        app: account-service
+spec:
+    replicas: 2
+    selector:
+        matchLabels:
+            app: account-service
+    template:
+        metadata:
+            labels:
+                app: account-service
+            annotations:
+                prometheus.io/scrape: "true"
+                prometheus.io/port: "8082"
+                prometheus.io/path: "/account-service/actuator/prometheus"
+        spec:
+            serviceAccountName: spring-cloud-kubernetes
+            containers:
+                - name: account-service
+                  image: barakah/account-service:latest
+                  imagePullPolicy: Never
+                  ports:
+                      - containerPort: 8082
+                        name: http
+                      - containerPort: 9092
+                        name: grpc
+
+                  envFrom:
+                      - configMapRef:
+                            name: spring-common-config
+                      - configMapRef:
+                            name: account-service-config
+
+                  env:
+                      - name: SPRING_DATASOURCE_URL
+                        value: "jdbc:postgresql://postgres-service:5432/barakah_accounts"
+                      - name: SPRING_DATASOURCE_USERNAME
+                        valueFrom:
+                            secretKeyRef:
+                                name: account-service-db-secret
+                                key: DB_USERNAME
+                      - name: SPRING_DATASOURCE_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: account-service-db-secret
+                                key: DB_PASSWORD
+                      - name: SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT
+                        value: "30000"
+                      - name: SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT
+                        value: "600000"
+                      - name: SPRING_DATASOURCE_HIKARI_MAX_LIFETIME
+                        value: "1800000"
+                      - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+                        value: "2"
+                      - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+                        value: "10"
+                      - name: SPRING_DATASOURCE_HIKARI_VALIDATION_TIMEOUT
+                        value: "5000"
+                      - name: SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD
+                        value: "60000"
+                      
+                      # 🔧 JPA/Hibernate settings to handle connection issues
+                      - name: SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_PROVIDER_DISABLES_AUTOCOMMIT
+                        value: "true"
+                      - name: SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_TIME_ZONE
+                        value: "UTC"
+                      - name: SPRING_JPA_DATABASE_PLATFORM
+                        value: "org.hibernate.dialect.PostgreSQLDialect"
+                      
+                      # 🔧 Reduce DDL validation during startup
+                      - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+                        value: "validate"
+
+                      - name: KEYCLOAK_CREDENTIALS_SECRET
+                        valueFrom:
+                            secretKeyRef:
+                                name: jwt-secret
+                                key: KEYCLOAK_CLIENT_SECRET
+                    #   - name: EUREKA_INSTANCE_INSTANCE_ID
+                    #     value: "account-service:$(HOSTNAME)"
+                    #   - name: HOSTNAME
+                    #     valueFrom:
+                    #         fieldRef:
+                    #             fieldPath: metadata.name
+
+                  resources:
+                      requests:
+                          memory: "512Mi"
+                          cpu: "250m"
+                      limits:
+                          memory: "1Gi"
+                          cpu: "500m"
+
+                  readinessProbe:
+                      httpGet:
+                          path: /account-service/actuator/health/readiness
+                          port: 8082
+                      initialDelaySeconds: 60
+                      periodSeconds: 10
+                      timeoutSeconds: 5
+                      failureThreshold: 3
+
+                  livenessProbe:
+                      httpGet:
+                          path: /account-service/actuator/health/liveness
+                          port: 8082
+                      initialDelaySeconds: 90
+                      periodSeconds: 15
+                      timeoutSeconds: 5
+                      failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: account-service
+    namespace: barakah-fund
+    labels:
+        app: account-service
+spec:
+    type: ClusterIP
+    ports:
+        - port: 8082
+          targetPort: 8082
+          name: http
+        - port: 9092
+          targetPort: 9092
+          name: grpc
+    selector:
+        app: account-service

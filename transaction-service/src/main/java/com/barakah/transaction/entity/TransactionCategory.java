@@ -1,9 +1,16 @@
 package com.barakah.transaction.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +28,7 @@ import java.util.List;
 public class TransactionCategory {
     
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "category_id", length = 36)
     private String categoryId;
     
@@ -44,17 +52,23 @@ public class TransactionCategory {
     @Builder.Default
     private Boolean isSystem = false;
     
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Transaction> transactions;
     
     @Column(name = "created_by", length = 36)
     private String createdBy;
     
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
     @UpdateTimestamp
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     

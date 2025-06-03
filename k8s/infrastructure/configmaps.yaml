@@ -1,0 +1,256 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: postgres-config
+    namespace: barakah-fund
+data:
+    POSTGRES_DB: "barakah_main"
+    POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: postgres-init-scripts
+    namespace: barakah-fund
+data:
+    01-init-databases.sql: |
+        CREATE DATABASE barakah_users;
+        CREATE DATABASE barakah_accounts;
+        CREATE DATABASE barakah_transactions;
+
+        CREATE USER barakah_user WITH PASSWORD 'barakah_user_password';
+        CREATE USER barakah_account WITH PASSWORD 'barakah_account_password';
+        CREATE USER barakah_transaction WITH PASSWORD 'barakah_transaction_password';
+
+        GRANT ALL PRIVILEGES ON DATABASE barakah_users TO barakah_user;
+        GRANT ALL PRIVILEGES ON DATABASE barakah_accounts TO barakah_account;
+        GRANT ALL PRIVILEGES ON DATABASE barakah_transactions TO barakah_transaction;
+
+        \c barakah_users;
+        GRANT ALL ON SCHEMA public TO barakah_user;
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO barakah_user;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO barakah_user;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO barakah_user;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO barakah_user;
+
+        \c barakah_accounts;
+        GRANT ALL ON SCHEMA public TO barakah_account;
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO barakah_account;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO barakah_account;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO barakah_account;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO barakah_account;
+
+        \c barakah_transactions;
+        GRANT ALL ON SCHEMA public TO barakah_transaction;
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO barakah_transaction;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO barakah_transaction;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO barakah_transaction;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO barakah_transaction;
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: redis-config
+    namespace: barakah-fund
+data:
+    redis.conf: |
+        appendonly yes
+        maxmemory 256mb
+        maxmemory-policy allkeys-lru
+        save 900 1
+        save 300 10
+        save 60 10000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: kafka-config
+    namespace: barakah-fund
+data:
+    KAFKA_ENABLE_KRAFT: "yes"
+    KAFKA_CFG_PROCESS_ROLES: "broker,controller"
+    KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+    KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+    KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+    KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-service:9092"
+    KAFKA_CFG_BROKER_ID: "1"
+    KAFKA_CFG_NODE_ID: "1"
+    KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka-service:9093"
+    ALLOW_PLAINTEXT_LISTENER: "yes"
+    KAFKA_KRAFT_CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    KAFKA_CFG_NUM_PARTITIONS: "3"
+    KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: "1"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: keycloak-config
+    namespace: barakah-fund
+data:
+    KC_DB: "postgres"
+    KC_DB_URL: "jdbc:postgresql://postgres-service:5432/barakah_main"
+    KC_HOSTNAME: "keycloak-service"
+    KC_HTTP_ENABLED: "true"
+    KC_METRICS_ENABLED: "true"
+    KC_HEALTH_ENABLED: "true"
+    KC_PROXY: "edge"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: spring-common-config
+    namespace: barakah-fund
+data:
+    SPRING_PROFILES_ACTIVE: "kubernetes"
+    SPRING_CLOUD_CONFIG_ENABLED: "false"
+    SPRING_CLOUD_CONFIG_ENABLED: "false"
+    SPRING_CLOUD_VAULT_ENABLED: "false" 
+    VAULT_ENABLED: "false"
+
+    SPRING_CLOUD_DISCOVERY_ENABLED: "true"
+    SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "true"
+    SPRING_CLOUD_KUBERNETES_DISCOVERY_ALL_NAMESPACES: "false"
+    SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACE: "barakah-fund"
+    SPRING_CLOUD_KUBERNETES_DISCOVERY_INCLUDE_NOT_READY_ADDRESSES: "false"
+    SPRING_CLOUD_LOADBALANCER_RIBBON_ENABLED: "false"
+
+    KEYCLOAK_AUTH_SERVER_URL: "http://keycloak-service:8080"
+    KEYCLOAK_REALM: "barakah"
+
+    SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+    SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+    SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+    SPRING_JPA_SHOW_SQL: "false"
+    SPRING_JPA_OPEN_IN_VIEW: "false"
+    SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_TIME_ZONE: "UTC"
+
+
+    SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "2"
+    SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "10"
+    SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+    SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "600000"
+    SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "1800000"
+
+    SPRING_CACHE_TYPE: "redis"
+    SPRING_REDIS_HOST: "redis-service"
+    SPRING_REDIS_PORT: "6379"
+    SPRING_REDIS_DATABASE: "0"
+    SPRING_REDIS_TIMEOUT: "2000"
+
+    SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
+    SPRING_KAFKA_CONSUMER_GROUP_ID: "barakah-fund-group"
+    SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: "earliest"
+
+    GRPC_SERVER_ENABLE_REFLECTION: "true"
+    GRPC_SERVER_MAX_INBOUND_MESSAGE_SIZE: "4MB"
+    GRPC_CLIENT_NEGOTIATION_TYPE: "plaintext"
+    GRPC_SERVER_SECURITY_ENABLED: "false"
+
+    MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,discovery"
+    MANAGEMENT_ENDPOINTS_WEB_BASE_PATH: "/actuator"
+    MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
+
+    LOGGING_LEVEL_COM_BARAKAH: "INFO"
+    LOGGING_LEVEL_ROOT: "INFO"
+    LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CLOUD_KUBERNETES: "DEBUG"
+
+    APP_SECURITY_CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:4200,http://localhost:8080"
+    APP_SECURITY_CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+    APP_SECURITY_CORS_ALLOWED_HEADERS: "*"
+    APP_SECURITY_CORS_ALLOW_CREDENTIALS: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: gateway-service-config
+    namespace: barakah-fund
+data:
+    SPRING_APPLICATION_NAME: "gateway-service"
+    SERVER_PORT: "8070"
+    GRPC_SERVER_PORT: "9090"
+    
+    GRPC_CLIENT_USER_SERVICE_ADDRESS: "static://user-service:9091"
+    GRPC_CLIENT_ACCOUNT_SERVICE_ADDRESS: "static://account-service:9092"
+    GRPC_CLIENT_TRANSACTION_SERVICE_ADDRESS: "static://transaction-service:9093"
+
+    GRPC_CLIENT_USER_SERVICE_NEGOTIATION_TYPE: "plaintext"
+    GRPC_CLIENT_ACCOUNT_SERVICE_NEGOTIATION_TYPE: "plaintext" 
+    GRPC_CLIENT_TRANSACTION_SERVICE_NEGOTIATION_TYPE: "plaintext"
+    
+    GRPC_CLIENT_USER_SERVICE_ENABLE_KEEP_ALIVE: "true"
+    GRPC_CLIENT_ACCOUNT_SERVICE_ENABLE_KEEP_ALIVE: "true"
+    GRPC_CLIENT_TRANSACTION_SERVICE_ENABLE_KEEP_ALIVE: "true"
+    
+    GRPC_CLIENT_USER_SERVICE_KEEP_ALIVE_TIME: "30s"
+    GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIME: "30s"
+    GRPC_CLIENT_TRANSACTION_SERVICE_KEEP_ALIVE_TIME: "30s"
+    
+    GRPC_CLIENT_NEGOTIATION_TYPE: "plaintext"
+    GRPC_SERVER_SECURITY_ENABLED: "false"
+    GRPC_CLIENT_SECURITY_ENABLED: "false"
+    
+    SPRING_GRPC_CLIENT_USER_SERVICE_SECURITY_ENABLED: "false"
+    SPRING_GRPC_CLIENT_ACCOUNT_SERVICE_SECURITY_ENABLED: "false"
+    SPRING_GRPC_CLIENT_TRANSACTION_SERVICE_SECURITY_ENABLED: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: user-service-config
+    namespace: barakah-fund
+data:
+    SPRING_APPLICATION_NAME: "user-service"
+    SERVER_PORT: "8081"
+    SERVER_SERVLET_CONTEXT_PATH: "/user-service"
+    GRPC_SERVER_PORT: "9091"
+
+    # KEYCLOAK_AUTH_SERVER_URL: "http://keycloak:8080"
+    KEYCLOAK_REALM: "barakah"
+    KEYCLOAK_RESOURCE: "banking-services"
+    KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
+
+    APP_USER_DEFAULT_ROLE: "USER"
+    APP_USER_PASSWORD_MIN_LENGTH: "8"
+    APP_USER_REGISTRATION_AUTO_APPROVE: "true"
+
+    APP_SERVICES_AUTH_SERVICE_URL: "http://account-service:8082"
+    APP_SERVICES_TRANSACTION_SERVICE_URL: "http://transaction-service:8083"
+
+    FEATURES_EMAIL_VERIFICATION: "false"
+    FEATURES_AUDIT_LOGGING: "true"
+    FEATURES_RATE_LIMITING: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: account-service-config
+    namespace: barakah-fund
+data:
+    SPRING_APPLICATION_NAME: "account-service"
+    SERVER_PORT: "8082"
+    SERVER_SERVLET_CONTEXT_PATH: "/account-service"
+    GRPC_SERVER_PORT: "9092"
+
+    KEYCLOAK_RESOURCE: "banking-services"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: transaction-service-config
+    namespace: barakah-fund
+data:
+    SPRING_APPLICATION_NAME: "transaction-service"
+    SERVER_PORT: "8083"
+    SERVER_SERVLET_CONTEXT_PATH: "/transaction-service"
+    GRPC_SERVER_PORT: "9093"
+
+    KEYCLOAK_RESOURCE: "banking-services"
+    GRPC_CLIENT_ACCOUNT_SERVICE_ADDRESS: "static://account-service:9092"
+    GRPC_CLIENT_ACCOUNT_SERVICE_NEGOTIATION_TYPE: "plaintext" 
+    GRPC_CLIENT_ACCOUNT_SERVICE_ENABLE_KEEP_ALIVE: "true"
+    GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIME: "30s"
+    GRPC_SERVER_SECURITY_ENABLED: "false"
+
+    SPRING_GRPC_CLIENT_ACCOUNT_SERVICE_SECURITY_ENABLED: "false"
+

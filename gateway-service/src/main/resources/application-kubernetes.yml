@@ -1,0 +1,51 @@
+spring:
+  cloud:
+    kubernetes:
+      discovery:
+        enabled: true
+        all-namespaces: false
+        namespace: barakah-fund
+
+grpc:
+  client:
+    user-service:
+      address: static://user-service:9091
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveTime: 30s
+      keepAliveTimeout: 5s
+      keepAliveWithoutCalls: true
+      maxRetryAttempts: 3
+      security:
+        enabled: false
+    account-service:
+      address: static://account-service:9092
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveTime: 30s
+      keepAliveTimeout: 5s
+      keepAliveWithoutCalls: true
+      maxRetryAttempts: 3
+      security:
+        enabled: false
+    transaction-service:
+      address: static://transaction-service:9093
+      negotiationType: PLAINTEXT
+      enableKeepAlive: true
+      keepAliveTime: 30s
+      keepAliveTimeout: 5s
+      keepAliveWithoutCalls: true
+      maxRetryAttempts: 3
+      security:
+        enabled: false
+  server:
+    port: 9090
+    enableReflection: true
+    security:
+      enabled: false
+
+logging:
+  level:
+    com.barakah: DEBUG
+    net.devh.boot.grpc: DEBUG
+    io.grpc: DEBUG

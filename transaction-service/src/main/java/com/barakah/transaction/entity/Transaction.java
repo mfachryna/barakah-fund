@@ -1,6 +1,8 @@
 package com.barakah.transaction.entity;
 
 import com.barakah.transaction.enums.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -76,7 +78,9 @@ public class Transaction {
     private String categoryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", insertable = false, updatable = false)
+    @JoinColumn(name = "category_id")
+    @JsonIgnoreProperties({"transactions", "hibernateLazyInitializer", "handler"})
+    // @JoinColumn(name = "category_id", insertable = false, updatable = false)
     private TransactionCategory category;
 
     @Column(name = "balance_before", precision = 19, scale = 2)

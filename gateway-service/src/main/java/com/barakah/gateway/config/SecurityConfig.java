@@ -44,9 +44,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/validate").permitAll()
+                
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/info").permitAll()
-                .requestMatchers("/actuator/**").hasRole("ADMIN")
+                .requestMatchers("/actuator/**").permitAll()
                 
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
