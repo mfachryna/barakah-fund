@@ -2,7 +2,7 @@ package com.barakah.shared.exception;
 
 public class AuthExceptions {
     
-    public static class InvalidCredentialsException extends SecurityException {
+    public static class InvalidCredentialsException extends RuntimeException implements BusinessException {
         public InvalidCredentialsException(String message) {
             super("Invalid credentials: " + message);
         }
@@ -12,7 +12,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class TokenExpiredException extends SecurityException {
+    public static class TokenExpiredException extends RuntimeException implements BusinessException {
         public TokenExpiredException() {
             super("Token has expired");
         }
@@ -22,7 +22,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class InvalidTokenException extends SecurityException {
+    public static class InvalidTokenException extends RuntimeException implements BusinessException {
         public InvalidTokenException(String message) {
             super("Invalid token: " + message);
         }
@@ -32,7 +32,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class UserAlreadyExistsException extends IllegalStateException {
+    public static class UserAlreadyExistsException extends IllegalStateException implements BusinessException {
         public UserAlreadyExistsException(String identifier) {
             super("User already exists: " + identifier);
         }
@@ -42,7 +42,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class RegistrationFailedException extends RuntimeException {
+    public static class RegistrationFailedException extends RuntimeException implements BusinessException {
         public RegistrationFailedException(String message) {
             super("Registration failed: " + message);
         }
@@ -52,7 +52,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class AccountDisabledException extends SecurityException {
+    public static class AccountDisabledException extends SecurityException implements BusinessException {
         public AccountDisabledException(String username) {
             super("Account is disabled: " + username);
         }
@@ -62,7 +62,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class AccountLockedException extends SecurityException {
+    public static class AccountLockedException extends SecurityException implements BusinessException {
         public AccountLockedException(String username) {
             super("Account is locked: " + username);
         }
@@ -72,7 +72,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class InsufficientPermissionsException extends SecurityException {
+    public static class InsufficientPermissionsException extends SecurityException implements BusinessException {
         public InsufficientPermissionsException(String action) {
             super("Insufficient permissions for: " + action);
         }
@@ -82,7 +82,7 @@ public class AuthExceptions {
         }
     }
     
-    public static class AuthenticationServiceException extends RuntimeException {
+    public static class AuthenticationServiceException extends RuntimeException implements BusinessException {
         public AuthenticationServiceException(String message) {
             super("Authentication service error: " + message);
         }

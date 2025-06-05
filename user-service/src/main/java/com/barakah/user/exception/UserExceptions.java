@@ -1,8 +1,10 @@
 package com.barakah.user.exception;
 
+import com.barakah.shared.exception.BusinessException;
+
 public class UserExceptions {
     
-    public static class UserNotFoundException extends RuntimeException {
+    public static class UserNotFoundException extends RuntimeException implements BusinessException {
         public UserNotFoundException(String identifier) {
             super("User not found: " + identifier);
         }
@@ -12,7 +14,7 @@ public class UserExceptions {
         }
     }
     
-    public static class UserAlreadyExistsException extends IllegalStateException {
+    public static class UserAlreadyExistsException extends IllegalStateException implements BusinessException {
         public UserAlreadyExistsException(String field, String value) {
             super("User already exists with " + field + ": " + value);
         }
@@ -22,7 +24,7 @@ public class UserExceptions {
         }
     }
     
-    public static class InvalidUserDataException extends IllegalArgumentException {
+    public static class InvalidUserDataException extends IllegalArgumentException implements BusinessException {
         public InvalidUserDataException(String message) {
             super("Invalid user data: " + message);
         }
@@ -32,7 +34,7 @@ public class UserExceptions {
         }
     }
     
-    public static class UserCreationFailedException extends RuntimeException {
+    public static class UserCreationFailedException extends RuntimeException implements BusinessException {
         public UserCreationFailedException(String message) {
             super("Failed to create user: " + message);
         }
@@ -42,7 +44,7 @@ public class UserExceptions {
         }
     }
     
-    public static class UserUpdateFailedException extends RuntimeException {
+    public static class UserUpdateFailedException extends RuntimeException implements BusinessException {
         public UserUpdateFailedException(String message) {
             super("Failed to update user: " + message);
         }
@@ -52,7 +54,7 @@ public class UserExceptions {
         }
     }
     
-    public static class UserDeletionFailedException extends RuntimeException {
+    public static class UserDeletionFailedException extends RuntimeException implements BusinessException {
         public UserDeletionFailedException(String message) {
             super("Failed to delete user: " + message);
         }
@@ -62,7 +64,7 @@ public class UserExceptions {
         }
     }
     
-    public static class InvalidUserStatusException extends IllegalStateException {
+    public static class InvalidUserStatusException extends IllegalStateException implements BusinessException {
         public InvalidUserStatusException(String userId, String currentStatus, String requestedOperation) {
             super("Cannot perform '" + requestedOperation + "' on user " + userId + " with status: " + currentStatus);
         }
@@ -72,7 +74,7 @@ public class UserExceptions {
         }
     }
     
-    public static class UserPermissionException extends SecurityException {
+    public static class UserPermissionException extends SecurityException implements BusinessException {
         public UserPermissionException(String action) {
             super("Permission denied for action: " + action);
         }

@@ -25,7 +25,7 @@ public interface AccountMapper {
 
     @Named("bigDecimalToLong")
     default long bigDecimalToLong(BigDecimal value) {
-        return value != null ? value.multiply(BigDecimal.valueOf(100)).longValue() : 0L;
+        return value != null ? value.longValue() : 0L;
     }
 
     @Named("longToBigDecimal")

@@ -34,7 +34,7 @@ public class AccountMapper {
         CreateAccountRequest.Builder builder = CreateAccountRequest.newBuilder()
                 .setAccountType(AccountType.valueOf(dto.getAccountType()))
                 .setAccountName(dto.getAccountName())
-                .setInitialDeposit(dto.getInitialBalance().longValue());
+                .setInitialDeposit(dto.getInitialDeposit().longValue());
 
         if (dto.getUserId() != null) {
             builder.setUserId(dto.getUserId());

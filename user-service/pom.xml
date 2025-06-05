@@ -34,6 +34,7 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <resilience4j-java.version>4.4.0</resilience4j-java.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
         <spring-cloud-kubernetes.version>3.1.0</spring-cloud-kubernetes.version>
     </properties>
 
@@ -103,7 +104,6 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
         </dependency>
-
 
         <!-- <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -224,6 +224,15 @@
             <artifactId>grpc-testing</artifactId>
             <version>${grpc.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
     </dependencies>
 

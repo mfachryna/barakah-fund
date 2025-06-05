@@ -3,6 +3,7 @@ package com.barakah.gateway.service;
 import com.barakah.auth.proto.v1.*;
 import com.barakah.gateway.dto.auth.*;
 import com.barakah.gateway.mapper.AuthMapper;
+import com.barakah.shared.util.GrpcErrorHandler;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -15,153 +16,118 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthGatewayService {
 
+    private final AuthMapper authMapper;
+
     @GrpcClient("user-service")
     private AuthServiceGrpc.AuthServiceBlockingStub authServiceStub;
 
-    private final AuthMapper authMapper;
+    public LoginResponseDto login(LoginRequestDto requestDto) {
+        LoginRequest grpcRequest = authMapper.toGrpcLoginRequest(requestDto);
+        LoginResponse grpcResponse = loginGrpc(grpcRequest);
+        return authMapper.toLoginDto(grpcResponse);
+    }
 
-    @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackLogin")
-    @Retry(name = "user-service")
-    public LoginResponseDto login(LoginRequestDto request) {
-        try {
-            LoginRequest grpcRequest = authMapper.toGrpcLoginRequest(request);
-            LoginResponse response = authServiceStub.login(grpcRequest);
-            return authMapper.toLoginDto(response);
-        } catch (Exception e) {
-            log.error("Failed to login user: {}", request.getUsername(), e);
-            throw new RuntimeException("Failed to login", e);
-        }
+    public LoginResponseDto register(RegisterRequestDto requestDto) {
+        RegisterRequest grpcRequest = authMapper.toGrpcRegisterRequest(requestDto);
+        RegisterResponse grpcResponse = registerGrpc(grpcRequest);
+        return authMapper.toRegisterDto(grpcResponse);
+    }
+
+    public RefreshTokenResponseDto refreshToken(RefreshTokenRequestDto requestDto) {
+        RefreshTokenRequest grpcRequest = authMapper.toGrpcRefreshRequest(requestDto);
+        RefreshTokenResponse grpcResponse = refreshTokenGrpc(grpcRequest);
+        return authMapper.toRefreshDto(grpcResponse);
+    }
+
+    public LogoutResponseDto logout(LogoutRequestDto requestDto) {
+        LogoutRequest grpcRequest = authMapper.toGrpcLogoutRequest(requestDto);
+        LogoutResponse grpcResponse = logoutGrpc(grpcRequest);
+        return authMapper.toLogoutDto(grpcResponse);
+    }
+
+    public ValidateTokenResponseDto validateToken(ValidateTokenRequestDto requestDto) {
+        ValidateTokenRequest grpcRequest = authMapper.toGrpcValidateRequest(requestDto);
+        ValidateTokenResponse grpcResponse = validateTokenGrpc(grpcRequest);
+        return authMapper.toValidateDto(grpcResponse);
     }
 
     @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackLogin")
     @Retry(name = "user-service")
     public LoginResponse loginGrpc(LoginRequest request) {
-        try {
-            return authServiceStub.login(request);
-        } catch (Exception e) {
-            log.error("Failed to login user: {}", request.getUsername(), e);
-            throw new RuntimeException("Failed to login", e);
-        }
+        return authServiceStub.login(request);
     }
 
     @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackRegister")
     @Retry(name = "user-service")
-    public RegisterResponseDto register(RegisterRequestDto request) {
-        try {
-            RegisterRequest grpcRequest = authMapper.toGrpcRegisterRequest(request);
-            RegisterResponse response = authServiceStub.register(grpcRequest);
-            return authMapper.toRegisterDto(response);
-        } catch (Exception e) {
-            log.error("Failed to register user: {}", request.getUsername(), e);
-            throw new RuntimeException("Failed to register", e);
-        }
-    }
-
-    @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackRegister")
-    @Retry(name = "user-service")
-    public RegisterResponse register(RegisterRequest request) {
-        try {
-            return authServiceStub.register(request);
-        } catch (Exception e) {
-            log.error("Failed to register user: {}", request.getUsername(), e);
-            throw new RuntimeException("Failed to register", e);
-        }
+    public RegisterResponse registerGrpc(RegisterRequest request) {
+        return authServiceStub.register(request);
     }
 
     @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackRefreshToken")
     @Retry(name = "user-service")
-    public RefreshTokenResponseDto refreshToken(RefreshTokenRequestDto request) {
-        try {
-            RefreshTokenRequest grpcRequest = authMapper.toGrpcRefreshRequest(request);
-            RefreshTokenResponse response = authServiceStub.refreshToken(grpcRequest);
-            return authMapper.toRefreshDto(response);
-        } catch (Exception e) {
-            log.error("Failed to refresh token", e);
-            throw new RuntimeException("Failed to refresh token", e);
-        }
-    }
-    @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackRefreshToken")
-    @Retry(name = "user-service")
-    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
-        try {
-
-            return authServiceStub.refreshToken(request);
-        } catch (Exception e) {
-            log.error("Failed to refresh token", e);
-            throw new RuntimeException("Failed to refresh token", e);
-        }
+    public RefreshTokenResponse refreshTokenGrpc(RefreshTokenRequest request) {
+        return authServiceStub.refreshToken(request);
     }
 
     @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackLogout")
     @Retry(name = "user-service")
-    public LogoutResponseDto logout(LogoutRequestDto request) {
-        try {
-            LogoutRequest grpcRequest = authMapper.toGrpcLogoutRequest(request);
-            LogoutResponse response = authServiceStub.logout(grpcRequest);
-            return authMapper.toLogoutDto(response);
-        } catch (Exception e) {
-            log.error("Failed to logout", e);
-            throw new RuntimeException("Failed to logout", e);
-        }
-    }
-  @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackLogout")
-    @Retry(name = "user-service")
     public LogoutResponse logoutGrpc(LogoutRequest request) {
-        try {
-            return authServiceStub.logout(request);
-        } catch (Exception e) {
-            log.error("Failed to logout", e);
-            throw new RuntimeException("Failed to logout", e);
-        }
-    }
-
-    @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackValidateToken")
-    @Retry(name = "user-service")
-    public ValidateTokenResponseDto validateToken(ValidateTokenRequestDto request) {
-        try {
-            ValidateTokenRequest grpcRequest = authMapper.toGrpcValidateRequest(request);
-            ValidateTokenResponse response = authServiceStub.validateToken(grpcRequest);
-            return authMapper.toValidateDto(response);
-        } catch (Exception e) {
-            log.error("Failed to validate token", e);
-            throw new RuntimeException("Failed to validate token", e);
-        }
+        return authServiceStub.logout(request);
     }
 
     @CircuitBreaker(name = "user-service", fallbackMethod = "fallbackValidateToken")
     @Retry(name = "user-service")
     public ValidateTokenResponse validateTokenGrpc(ValidateTokenRequest request) {
-        try {
-            return authServiceStub.validateToken(request);
-        } catch (Exception e) {
-            log.error("Failed to validate token", e);
-            throw new RuntimeException("Failed to validate token", e);
-        }
+        return authServiceStub.validateToken(request);
     }
 
-    // Fallback methods
-    public LoginResponseDto fallbackLogin(LoginRequestDto request, Exception ex) {
-        log.warn("Fallback: Failed to login user: {}", request.getUsername(), ex);
-        throw new RuntimeException("Authentication service is currently unavailable", ex);
+    public LoginResponse fallbackLogin(LoginRequest request, Exception ex) {
+        GrpcErrorHandler.handleFallbackError(
+                "Authentication",
+                "login user: " + request.getUsername(),
+                "Authentication service is currently unavailable. Please try again later.",
+                ex
+        );
+        return null;
     }
 
-    public RegisterResponseDto fallbackRegister(RegisterRequestDto request, Exception ex) {
-        log.warn("Fallback: Failed to register user: {}", request.getUsername(), ex);
-        throw new RuntimeException("Authentication service is currently unavailable", ex);
+    public RegisterResponse fallbackRegister(RegisterRequest request, Exception ex) {
+        GrpcErrorHandler.handleFallbackError(
+                "Authentication",
+                "register user: " + request.getUsername(),
+                "Authentication service is currently unavailable. Please try again later.",
+                ex
+        );
+        return null;
     }
 
-    public RefreshTokenResponseDto fallbackRefreshToken(RefreshTokenRequestDto request, Exception ex) {
-        log.warn("Fallback: Failed to refresh token", ex);
-        throw new RuntimeException("Authentication service is currently unavailable", ex);
+    public RefreshTokenResponse fallbackRefreshToken(RefreshTokenRequest request, Exception ex) {
+        GrpcErrorHandler.handleFallbackError(
+                "Authentication",
+                "refresh token",
+                "Authentication service is currently unavailable. Please try again later.",
+                ex
+        );
+        return null;
     }
 
-    public LogoutResponseDto fallbackLogout(LogoutRequestDto request, Exception ex) {
-        log.warn("Fallback: Failed to logout", ex);
-        throw new RuntimeException("Authentication service is currently unavailable", ex);
+    public LogoutResponse fallbackLogout(LogoutRequest request, Exception ex) {
+        GrpcErrorHandler.handleFallbackError(
+                "Authentication",
+                "logout user",
+                "Authentication service is currently unavailable. Please try again later.",
+                ex
+        );
+        return null;
     }
 
-    public ValidateTokenResponseDto fallbackValidateToken(ValidateTokenRequestDto request, Exception ex) {
-        log.warn("Fallback: Failed to validate token", ex);
-        throw new RuntimeException("Authentication service is currently unavailable", ex);
+    public ValidateTokenResponse fallbackValidateToken(ValidateTokenRequest request, Exception ex) {
+        GrpcErrorHandler.handleFallbackError(
+                "Authentication",
+                "validate token",
+                "Authentication service is currently unavailable. Please try again later.",
+                ex
+        );
+        return null;
     }
 }

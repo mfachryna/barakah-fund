@@ -1,6 +1,9 @@
-package com.barakah.transaction.exception;
+package com.barakah.transaction.config;
 
 import com.barakah.shared.exception.AuthExceptions;
+import com.barakah.transaction.exception.InsufficientFundsException;
+import com.barakah.transaction.exception.TransactionExceptions;
+import com.barakah.transaction.exception.TransactionNotFoundException;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import lombok.extern.slf4j.Slf4j;

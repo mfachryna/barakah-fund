@@ -23,6 +23,6 @@ public class CreditDebitRequestDto {
     @Size(max = 255, message = "Description must not exceed 255 characters")
     private String description;
     
-    private String transactionId; // Optional, will be generated if not provided
-    private String reference; // Optional reference number
+    private String transactionId; 
+    private String reference; 
 }

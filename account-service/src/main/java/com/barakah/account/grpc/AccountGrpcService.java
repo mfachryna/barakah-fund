@@ -5,14 +5,24 @@ import com.barakah.account.enums.AccountType;
 import com.barakah.account.mapper.AccountMapper;
 import com.barakah.account.proto.v1.*;
 import com.barakah.account.service.AccountService;
+import com.barakah.shared.annotation.RateLimit;
 import com.barakah.shared.context.UserContext;
 import com.barakah.shared.context.UserContextHolder;
 import com.barakah.shared.exception.AuthExceptions;
 import com.barakah.common.proto.v1.PageResponse;
+
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +38,10 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
     private final AccountService accountService;
     private final AccountMapper accountMapper;
 
+    @RateLimit(endpoint = "grpc-create-account")
+    @Bulkhead(name = "account-creation")
+    @RateLimiter(name = "account-creation")
+    @CacheEvict(value = {"user-accounts"}, key = "#request.userId")
     @Override
     public void createAccount(CreateAccountRequest request, StreamObserver<CreateAccountResponse> responseObserver) {
 
@@ -35,31 +49,25 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
         log.info("Creating account for user: {} by: {}", request.getUserId(),
                 currentUser != null ? currentUser.getUsername() : "system");
 
-
         if (currentUser == null) {
             throw new AuthExceptions.InvalidTokenException("You need to login to create wallet");
         }
 
-
         validateCreateAccountRequest(request);
 
-
-        com.barakah.account.dto.CreateAccountRequest createRequest =
-                com.barakah.account.dto.CreateAccountRequest.builder()
-                        .userId(request.getUserId())
-                        .accountType(accountMapper.protoToAccountType(request.getAccountType()))
-                        .accountName(request.getAccountName())
-                        .initialDeposit(accountMapper.longToBigDecimal(request.getInitialDeposit()))
-                        .build();
-
+        com.barakah.account.dto.CreateAccountRequest createRequest
+                = com.barakah.account.dto.CreateAccountRequest.builder()
+                .userId(request.getUserId())
+                .accountType(accountMapper.protoToAccountType(request.getAccountType()))
+                .accountName(request.getAccountName())
+                .initialDeposit(accountMapper.longToBigDecimal(request.getInitialDeposit()))
+                .build();
 
         if (!currentUser.getRoles().contains("ADMIN")) {
             createRequest.setUserId(currentUser.getUserId());
         }
 
-
         AccountResponse result = accountService.createAccount(createRequest);
-
 
         CreateAccountResponse response = CreateAccountResponse.newBuilder()
                 .setAccount(buildAccountProto(result))
@@ -72,26 +80,24 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
         log.info("Successfully created account: {} for user: {}", result.getId(), result.getUserId());
     }
 
+    @RateLimit(endpoint = "grpc-get-account")
+    @Cacheable(value = "accounts", key = "#request.accountId")
     @Override
     public void getAccount(GetAccountRequest request, StreamObserver<GetAccountResponse> responseObserver) {
         UserContext currentUser = UserContextHolder.getContext();
         log.info("Getting account: {} by: {}", request.getAccountId(),
                 currentUser != null ? currentUser.getUsername() : "system");
 
-
         if (request.getAccountId().isEmpty()) {
             throw new IllegalArgumentException("Account ID cannot be empty");
         }
 
-
         AccountResponse account = accountService.getAccount(request.getAccountId());
-
 
         if (currentUser != null && !currentUser.getRoles().contains("ADMIN")
                 && !currentUser.getUserId().equals(account.getUserId())) {
             throw new SecurityException("You can only view your own accounts");
         }
-
 
         GetAccountResponse response = GetAccountResponse.newBuilder()
                 .setAccount(buildAccountProto(account))
@@ -102,6 +108,9 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
 
         log.info("Successfully returned account: {}", request.getAccountId());
     }
+
+    @RateLimit(endpoint = "grpc-get-account")
+    @Cacheable(value = "account-by-number", key = "#request.number")
     @Override
     public void getAccountByNumber(GetAccountByNumberRequest request, StreamObserver<GetAccountResponse> responseObserver) {
         UserContext currentUser = UserContextHolder.getContext();
@@ -112,14 +121,12 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
             throw new IllegalArgumentException("Account ID cannot be empty");
         }
 
-
         AccountResponse account = accountService.getAccountByAccountNumber(request.getNumber());
 
         if (currentUser != null && !currentUser.getRoles().contains("ADMIN")
                 && !currentUser.getUserId().equals(account.getUserId())) {
             throw new SecurityException("You can only view your own accounts");
         }
-
 
         GetAccountResponse response = GetAccountResponse.newBuilder()
                 .setAccount(buildAccountProto(account))
@@ -131,7 +138,8 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
         log.info("Successfully returned account: {}", request.getNumber());
     }
 
-
+    @RateLimit(endpoint = "grpc-list-accounts")
+    @Cacheable(value = "user-accounts", key = "#request.userId + '_' + #request.pageRequest.page + '_' + #request.pageRequest.size")
     @Override
     public void listAccounts(ListAccountsRequest request, StreamObserver<ListAccountsResponse> responseObserver) {
 
@@ -161,16 +169,13 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
                 size
         );
 
-
         Page<AccountResponse> accountPage = accountService.listAccounts(targetUserId, pageable);
-
 
         ListAccountsResponse.Builder responseBuilder = ListAccountsResponse.newBuilder();
 
         for (AccountResponse accountDto : accountPage.getContent()) {
             responseBuilder.addAccounts(buildAccountProto(accountDto));
         }
-
 
         PageResponse pageResponse = PageResponse.newBuilder()
                 .setPage(accountPage.getNumber() + 1)
@@ -189,26 +194,25 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
         log.info("Successfully returned {} accounts for user: {}",
                 accountPage.getNumberOfElements(), targetUserId);
     }
+
+    @RateLimit(endpoint = "grpc-get-balance")
+    @Cacheable(value = "account-balances", key = "#request.accountNumber")
     @Override
     public void getBalance(GetBalanceRequest request, StreamObserver<GetBalanceResponse> responseObserver) {
         UserContext currentUser = UserContextHolder.getContext();
         log.info("Getting balance for account: {} by: {}", request.getAccountNumber(),
                 currentUser != null ? currentUser.getUsername() : "system");
 
-
         if (request.getAccountNumber().isEmpty()) {
             throw new IllegalArgumentException("Account number cannot be empty");
         }
 
-
         AccountResponse account = accountService.getAccountByAccountNumber(request.getAccountNumber());
-
 
         if (currentUser != null && !currentUser.getRoles().contains("ADMIN")
                 && !currentUser.getUserId().equals(account.getUserId())) {
             throw new SecurityException("You can only view your own account balance");
         }
-
 
         GetBalanceResponse response = GetBalanceResponse.newBuilder()
                 .setBalance(accountMapper.bigDecimalToLong(account.getBalance()))
@@ -220,12 +224,21 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
         log.info("Successfully returned balance for account: {}", request.getAccountNumber());
     }
 
+    @RateLimit(endpoint = "grpc-update-balance")
+    @CircuitBreaker(name = "database", fallbackMethod = "fallbackUpdateBalance")
+    @Bulkhead(name = "balance-operations")
+    @RateLimiter(name = "balance-operations")
+    @Caching(evict = {
+            @CacheEvict(value = "account-balances", key = "#request.accountNumber"),
+            @CacheEvict(value = "accounts", allEntries = true),
+            @CacheEvict(value = "account-by-number", key = "#request.accountNumber"),
+            @CacheEvict(value = "user-accounts", allEntries = true)
+    })
     @Override
     public void updateBalance(UpdateBalanceRequest request, StreamObserver<UpdateBalanceResponse> responseObserver) {
         UserContext currentUser = UserContextHolder.getContext();
         log.info("Updating balance for account: {} by: {}", request.getAccountNumber(),
                 currentUser != null ? currentUser.getUsername() : "system");
-
 
         if (currentUser == null) {
             throw new AuthExceptions.InvalidTokenException("Authentication required");
@@ -235,18 +248,16 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
             throw new SecurityException("Only administrators can update account balance");
         }
 
-
         validateUpdateBalanceRequest(request);
 
-
         BigDecimal amount = accountMapper.longToBigDecimal(request.getAmount());
-        AccountResponse updatedAccount = accountService.updateBalance(
+        AccountResponse updatedAccount = accountService.updateAccountBalance(
                 request.getAccountNumber(),
                 amount,
                 request.getOperation(),
-                request.getTransactionId()
+                request.getTransactionId(),
+                ""
         );
-
 
         UpdateBalanceResponse response = UpdateBalanceResponse.newBuilder()
                 .setSuccess(true)
@@ -261,6 +272,19 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
                 request.getAccountNumber(), currentUser.getUsername());
     }
 
+    public void fallbackUpdateBalance(UpdateBalanceRequest request, StreamObserver<UpdateBalanceResponse> responseObserver, Exception ex) {
+        log.error("Circuit breaker fallback triggered for updateBalance - Account: {}, Error: {}",
+                request.getAccountNumber(), ex.getMessage());
+
+        UpdateBalanceResponse errorResponse = UpdateBalanceResponse.newBuilder()
+                .setSuccess(false)
+                .setNewBalance(0)
+                .setMessage("Balance update service is temporarily unavailable. Please try again later.")
+                .build();
+
+        responseObserver.onNext(errorResponse);
+        responseObserver.onCompleted();
+    }
 
     private Account buildAccountProto(AccountResponse accountDto) {
         Account.Builder builder = Account.newBuilder()
@@ -270,7 +294,6 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
                 .setAccountName(accountDto.getAccountName())
                 .setBalance(accountMapper.bigDecimalToLong(accountDto.getBalance()))
                 .setStatus(accountMapper.accountStatusToProtoStatus(accountDto.getStatus()));
-
 
         if (accountDto.getAccountNumber() != null) {
             builder.setAccountNumber(accountDto.getAccountNumber());
@@ -295,7 +318,6 @@ public class AccountGrpcService extends AccountServiceGrpc.AccountServiceImplBas
         if (request.getInitialDeposit() < 0) {
             throw new IllegalArgumentException("Initial deposit cannot be negative");
         }
-
 
         try {
             accountMapper.protoToAccountType(request.getAccountType());

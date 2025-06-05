@@ -31,16 +31,15 @@ public class HealthCheckService {
     public Map<String, ServiceHealthDto> checkAllServices() {
         Map<String, ServiceHealthDto> healthMap = new HashMap<>();
 
-        // Check all services concurrently
-        CompletableFuture<ServiceHealthDto> userHealthFuture = 
-                CompletableFuture.supplyAsync(this::checkUserService);
-        CompletableFuture<ServiceHealthDto> accountHealthFuture = 
-                CompletableFuture.supplyAsync(this::checkAccountService);
-        CompletableFuture<ServiceHealthDto> transactionHealthFuture = 
-                CompletableFuture.supplyAsync(this::checkTransactionService);
+        CompletableFuture<ServiceHealthDto> userHealthFuture
+                = CompletableFuture.supplyAsync(this::checkUserService);
+        CompletableFuture<ServiceHealthDto> accountHealthFuture
+                = CompletableFuture.supplyAsync(this::checkAccountService);
+        CompletableFuture<ServiceHealthDto> transactionHealthFuture
+                = CompletableFuture.supplyAsync(this::checkTransactionService);
 
         try {
-            // Wait for all checks to complete with timeout
+
             CompletableFuture.allOf(userHealthFuture, accountHealthFuture, transactionHealthFuture)
                     .get(5, TimeUnit.SECONDS);
 
@@ -49,8 +48,7 @@ public class HealthCheckService {
             healthMap.put("transaction-service", transactionHealthFuture.get());
         } catch (Exception e) {
             log.error("Health check failed", e);
-            
-            // Add failed services
+
             if (!userHealthFuture.isDone()) {
                 healthMap.put("user-service", createFailedHealth("Health check timeout"));
             }
@@ -68,10 +66,10 @@ public class HealthCheckService {
     private ServiceHealthDto checkUserService() {
         long startTime = System.currentTimeMillis();
         try {
-            // Simple health check - you might want to implement a dedicated health check method
+
             userServiceStub.withDeadlineAfter(3, TimeUnit.SECONDS)
                     .getCurrentUser(Empty.newBuilder().build());
-            
+
             long responseTime = System.currentTimeMillis() - startTime;
             return ServiceHealthDto.builder()
                     .status("UP")
@@ -94,10 +92,10 @@ public class HealthCheckService {
     private ServiceHealthDto checkAccountService() {
         long startTime = System.currentTimeMillis();
         try {
-            // Simple health check
+
             accountServiceStub.withDeadlineAfter(3, TimeUnit.SECONDS)
                     .listAccounts(com.barakah.account.proto.v1.ListAccountsRequest.getDefaultInstance());
-            
+
             long responseTime = System.currentTimeMillis() - startTime;
             return ServiceHealthDto.builder()
                     .status("UP")
@@ -120,10 +118,10 @@ public class HealthCheckService {
     private ServiceHealthDto checkTransactionService() {
         long startTime = System.currentTimeMillis();
         try {
-            // Simple health check
+
             transactionServiceStub.withDeadlineAfter(3, TimeUnit.SECONDS)
                     .listTransactions(com.barakah.transaction.proto.v1.ListTransactionsRequest.getDefaultInstance());
-            
+
             long responseTime = System.currentTimeMillis() - startTime;
             return ServiceHealthDto.builder()
                     .status("UP")

@@ -1,0 +1,60 @@
+spring:
+  profiles:
+    active: local
+
+  # Override Kafka for local development
+  kafka:
+    bootstrap-servers: localhost:9092  # Change from localhost:9192 to standard Kafka port
+    consumer:
+      group-id: account-service-local
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.barakah.shared.event"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  # Override database for local development
+  datasource:
+    url: jdbc:postgresql://localhost:5432/barakah_accounts
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  # Disable services that aren't running locally
+  cloud:
+    config:
+      enabled: false
+    vault:
+      enabled: false
+
+# Disable Eureka for local development
+eureka:
+  client:
+    enabled: false
+
+# Override gRPC clients for local development
+grpc:
+  client:
+    user-service:
+      address: static://localhost:9091
+      negotiationType: plaintext
+    transaction-service:
+      address: static://localhost:9093
+      negotiationType: plaintext
+
+# Enable Keycloak mock for local development
+keycloak:
+  mock:
+    enabled: true
+
+# Disable Redis for local development (or configure local Redis)
+spring:
+  cache:
+    type: simple  # Use simple cache instead of Redis
+  redis:
+    host: localhost
+    port: 6379

@@ -41,6 +41,36 @@ public class TransactionMapper {
                 .notes(transaction.getNotes())
                 .build();
     }
+    public TransactionResponseDto toDto(CreateTransactionResponse transaction) {
+        return TransactionResponseDto.builder()
+                .transactionId(transaction.getTransaction().getTransactionId())
+                .transactionType(transaction.getTransaction().getType().toString())
+                .fromAccountId(transaction.getTransaction().getFromAccountId())
+                .fromAccountNumber(transaction.getTransaction().getFromAccountNumber())
+                .toAccountId(transaction.getTransaction().getToAccountId())
+                .toAccountNumber(transaction.getTransaction().getToAccountNumber())
+                .amount(new BigDecimal(transaction.getTransaction().getAmount()))
+                .currency(transaction.getTransaction().getCurrency())
+                .description(transaction.getTransaction().getDescription())
+                .status(transaction.getTransaction().getStatus().name())
+                .categoryId(transaction.getTransaction().getCategoryId())
+//                .categoryName(transaction.getCategory().getName())
+//                .balanceBeforeFrom(transaction.getBalanceBefore() ? null :
+//                    new BigDecimal(transaction.getBalanceBeforeFrom()))
+//                .balanceAfterFrom(transaction.getBalanceAfterFrom().isEmpty() ? null :
+//                    new BigDecimal(transaction.getBalanceAfterFrom()))
+//                .balanceBeforeTo(transaction.getBalanceBeforeTo().isEmpty() ? null :
+//                    new BigDecimal(transaction.getBalanceBeforeTo()))
+//                .balanceAfterTo(transaction.getBalanceAfterTo().isEmpty() ? null :
+//                    new BigDecimal(transaction.getBalanceAfterTo()))
+//                .createdAt(transaction.getCreatedAt().isEmpty() ? null :
+//                    LocalDateTime.parse(transaction.getCreatedAt(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+//                .processedAt(transaction.getProcessedAt().isEmpty() ? null :
+//                    LocalDateTime.parse(transaction.getProcessedAt(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .reference(transaction.getTransaction().getExternalReference())
+                .notes(transaction.getTransaction().getNotes())
+                .build();
+    }
 
     public TransactionCategoryResponseDto toCategoryDto(TransactionCategory category) {
         return TransactionCategoryResponseDto.builder()
@@ -59,18 +89,24 @@ public class TransactionMapper {
 
     public CreateTransactionRequest toGrpcCreateRequest(CreateTransactionRequestDto dto) {
         CreateTransactionRequest.Builder builder = CreateTransactionRequest.newBuilder()
-                .setType(TransactionType.valueOf(dto.getTransactionType()))
-                .setFromAccountNumber(dto.getAccountId())
+                .setType(TransactionType.valueOf(dto.getType()))
+                .setFromAccountNumber(dto.getFromAccountNumber())
                 .setAmount(dto.getAmount().longValue());
 
         if (dto.getDescription() != null) {
             builder.setDescription(dto.getDescription());
         }
+        if (TransactionType.valueOf(dto.getType()) == TransactionType.TRANSFER) {
+            builder.setToAccountNumber(dto.getToAccountNumber());
+        }
         if (dto.getCategoryId() != null) {
             builder.setCategoryId(dto.getCategoryId());
         }
-        if (dto.getReference() != null) {
-            builder.setExternalReference(dto.getReference());
+        if (dto.getExternalReference() != null) {
+            builder.setExternalReference(dto.getExternalReference());
+        }
+        if(dto.getExternalProvider() != null) {
+            builder.setExternalProvider(dto.getExternalProvider());
         }
         if (dto.getNotes() != null) {
             builder.setNotes(dto.getNotes());

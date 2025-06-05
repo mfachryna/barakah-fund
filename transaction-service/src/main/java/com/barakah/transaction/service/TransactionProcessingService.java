@@ -8,10 +8,13 @@ import com.barakah.transaction.enums.TransactionType;
 import com.barakah.transaction.exception.TransactionExceptions;
 import com.barakah.transaction.repository.TransactionRepository;
 import com.barakah.shared.context.UserContextHolder;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -26,6 +29,7 @@ public class TransactionProcessingService {
     private final AccountServiceClient accountServiceClient;
     private final TransactionUtils transactionUtils;
 
+    @Retry(name = "database")
     @Transactional
     public Transaction processTransaction(String transactionId) {
         Transaction transaction = transactionRepository.findById(transactionId)
@@ -37,10 +41,8 @@ public class TransactionProcessingService {
         }
 
         try {
-
             transaction.setStatus(TransactionStatus.PROCESSING);
-            transaction.setUpdatedBy(UserContextHolder.getCurrentUserId());
-            transactionRepository.save(transaction);
+            transaction = transactionRepository.save(transaction);
 
             processTransactionByType(transaction);
 
@@ -53,11 +55,11 @@ public class TransactionProcessingService {
             eventPublisher.publishTransactionStatusChanged(completedTransaction);
 
             log.info("Transaction processed successfully: {}", transactionId);
-            return completedTransaction;
+
+            return transaction;
 
         } catch (Exception e) {
-            log.error("Transaction processing failed: {}", transactionId, e);
-
+            log.error("Failed to process transaction {}: {}", transactionId, e.getMessage());
             transaction.setStatus(TransactionStatus.FAILED);
             transaction.setNotes(transaction.getNotes() + " | Error: " + e.getMessage());
             transaction.setUpdatedBy(UserContextHolder.getCurrentUserId());
@@ -85,11 +87,6 @@ public class TransactionProcessingService {
             toAccount = accountServiceClient.getAccount(transaction.getToAccountId());
         }
 
-        if (!transactionUtils.shouldProcessImmediately(transaction.getType())) {
-            log.warn("Transaction type {} normally doesn't process immediately, but processing anyway",
-                    transaction.getType());
-        }
-
         switch (transaction.getType()) {
             case TRANSFER ->
                 processTransfer(transaction, fromAccount, toAccount);
@@ -105,9 +102,6 @@ public class TransactionProcessingService {
                 processFee(transaction, fromAccount);
             case INTEREST ->
                 processInterest(transaction, toAccount);
-            default ->
-                throw new TransactionExceptions.InvalidTransactionException(
-                        "Unsupported transaction type: " + transaction.getType());
         }
     }
 
@@ -131,7 +125,6 @@ public class TransactionProcessingService {
 //        accountServiceClient.debitAccount(fromAccount.getAccountId(), transaction.getAmount());
 //
 //        accountServiceClient.creditAccount(toAccount.getAccountId(), transaction.getAmount());
-
         AccountInfo updatedFromAccount = accountServiceClient.getAccount(fromAccount.getAccountId());
         transaction.setBalanceAfter(updatedFromAccount.getBalance());
     }
@@ -159,7 +152,6 @@ public class TransactionProcessingService {
         validationService.validateSufficientBalance(fromAccount, transaction.getAmount());
 
 //        accountServiceClient.debitAccount(fromAccount.getAccountId(), transaction.getAmount());
-
         AccountInfo updatedAccount = accountServiceClient.getAccount(fromAccount.getAccountId());
         transaction.setBalanceAfter(updatedAccount.getBalance());
     }
@@ -174,7 +166,6 @@ public class TransactionProcessingService {
         validationService.validateSufficientBalance(fromAccount, transaction.getAmount());
 
 //        accountServiceClient.debitAccount(fromAccount.getAccountId(), transaction.getAmount());
-
         if (transaction.getExternalProvider() != null) {
             log.info("Processing payment with external provider: {}", transaction.getExternalProvider());
 

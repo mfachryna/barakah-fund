@@ -7,9 +7,23 @@ import com.barakah.account.enums.AccountStatus;
 import com.barakah.account.enums.AccountType;
 import com.barakah.account.exception.AccountExceptions;
 import com.barakah.account.mapper.AccountMapper;
+import com.barakah.account.proto.v1.UpdateBalanceRequest;
+import com.barakah.account.proto.v1.UpdateBalanceResponse;
 import com.barakah.account.repository.AccountRepository;
+import com.barakah.shared.annotation.RateLimit;
+import com.barakah.shared.context.UserContext;
+import com.barakah.shared.context.UserContextHolder;
+
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.grpc.stub.StreamObserver;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,6 +43,11 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
 
+    @RateLimit(endpoint = "create-account")
+    @Retry(name = "database")
+    @Bulkhead(name = "account-creation")
+    @RateLimiter(name = "account-creation")
+    @CacheEvict(value = {"user-accounts"}, key = "#request.userId")
     public AccountResponse createAccount(CreateAccountRequest request) {
         log.info("Creating account for user: {}, type: {}", request.getUserId(), request.getAccountType());
 
@@ -55,6 +74,9 @@ public class AccountService {
         }
     }
 
+    @RateLimit(endpoint = "get-account")
+    @Cacheable(value = "accounts", key = "#accountId")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public AccountResponse getAccount(String accountId) {
         log.info("Getting account: {}", accountId);
@@ -69,6 +91,9 @@ public class AccountService {
         return accountMapper.toResponse(account);
     }
 
+    @RateLimit(endpoint = "get-account")
+    @Cacheable(value = "accounts", key = "#accountId")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public Account getAccountById(String accountId) {
         log.info("Getting account entity: {}", accountId);
@@ -82,6 +107,9 @@ public class AccountService {
 
     }
 
+    @RateLimit(endpoint = "get-account")
+    @Cacheable(value = "account-by-number", key = "#accountNumber")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public Account getAccountByNumber(String accountNumber) {
         log.info("Getting account entity by number: {}", accountNumber);
@@ -94,6 +122,9 @@ public class AccountService {
                 .orElseThrow(() -> new AccountExceptions.AccountNotFoundException("account number", accountNumber));
     }
 
+    @RateLimit(endpoint = "get-account")
+    @Cacheable(value = "account-by-number", key = "#accountNumber")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public AccountResponse getAccountByAccountNumber(String accountNumber) {
         log.info("Getting account by number: {}", accountNumber);
@@ -108,6 +139,9 @@ public class AccountService {
         return accountMapper.toResponse(account);
     }
 
+    @RateLimit(endpoint = "list-accounts")
+    @Cacheable(value = "user-accounts", key = "#userId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public Page<AccountResponse> listAccounts(String userId, Pageable pageable) {
         log.info("Listing accounts for user: {}", userId);
@@ -126,6 +160,10 @@ public class AccountService {
         return accounts.map(accountMapper::toResponse);
     }
 
+    @RateLimit(endpoint = "get-balance")
+    @CircuitBreaker(name = "database", fallbackMethod = "fallbackGetAccountBalance")
+    @Cacheable(value = "account-balances", key = "#accountId")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public BigDecimal getBalance(String accountId) {
         log.info("Getting balance for account: {}", accountId);
@@ -140,42 +178,17 @@ public class AccountService {
         return account.getBalance();
     }
 
-    public AccountResponse updateBalance(String accountNumber, BigDecimal amount, String operation, String transactionId) {
-        log.info("Updating balance for account: {}, operation: {}, amount: {}, transactionId: {}",
-                accountNumber, operation, amount, transactionId);
-
-        validateUpdateBalanceRequest(accountNumber, amount, operation, transactionId);
-
-        if (isDuplicateTransaction(transactionId)) {
-            throw new AccountExceptions.DuplicateTransactionException(transactionId);
-        }
-
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountExceptions.AccountNotFoundException("account number", accountNumber));
-
-        if (account.getStatus() != AccountStatus.ACTIVE) {
-            throw new AccountExceptions.AccountStatusException(
-                    accountNumber,
-                    account.getStatus().toString(),
-                    operation
-            );
-        }
-
-        performBalanceOperation(account, amount, operation);
-
-        try {
-            Account savedAccount = accountRepository.save(account);
-            log.info("Balance updated successfully for account: {}, new balance: {}",
-                    accountNumber, savedAccount.getBalance());
-            return accountMapper.toResponse(savedAccount);
-        } catch (Exception e) {
-            log.error("Failed to update balance for account {}: {}", accountNumber, e.getMessage());
-            throw new RuntimeException("Failed to update account balance: " + e.getMessage(), e);
-        }
-    }
-
+    @RateLimit(endpoint = "update-balance")
+    @CircuitBreaker(name = "database", fallbackMethod = "fallbackUpdateBalance")
+    @Bulkhead(name = "balance-operations")
+    @RateLimiter(name = "balance-operations")
+    @Caching(evict = {
+        @CacheEvict(value = "account-balances", key = "#accountNumber"),
+        @CacheEvict(value = "accounts", allEntries = true),
+        @CacheEvict(value = "account-by-number", key = "#accountNumber")
+    })
     @Transactional
-    public Account updateAccountBalance(String accountNumber, BigDecimal amount, String operation,
+    public AccountResponse updateAccountBalance(String accountNumber, BigDecimal amount, String operation,
             String transactionId, String description) {
         log.info("Updating account balance: {} {} {}", accountNumber, operation, amount);
 
@@ -188,21 +201,13 @@ public class AccountService {
         BigDecimal previousBalance = account.getBalance();
         BigDecimal newBalance;
 
-        if ("CREDIT".equals(operation)) {
-            newBalance = previousBalance.add(amount);
-        } else if ("DEBIT".equals(operation)) {
-            if (previousBalance.compareTo(amount) < 0) {
-                throw new AccountExceptions.InsufficientBalanceException(
-                        accountNumber, previousBalance.toString(), amount.toString());
-            }
-            newBalance = previousBalance.subtract(amount);
-        } else {
-            throw new IllegalArgumentException("Invalid operation: " + operation);
+        performBalanceOperation(account, amount, operation);
+        newBalance = account.getBalance();
+        if (isDuplicateTransaction(transactionId)) {
+            throw new AccountExceptions.DuplicateTransactionException(transactionId);
         }
 
-        account.setBalance(newBalance);
-        account.setUpdatedAt(LocalDateTime.now());
-        Account updatedAccount = accountRepository.save(account);
+        AccountResponse updatedAccount = accountMapper.toResponse(account);
 
         log.info("Account balance updated: {} from {} to {}", accountNumber, previousBalance, newBalance);
         return updatedAccount;
@@ -224,11 +229,17 @@ public class AccountService {
         }
     }
 
+    @RateLimit(endpoint = "validate-account")
+    @Cacheable(value = "account-existence", key = "#userId + '_' + #accountType")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public boolean accountExists(String userId, AccountType accountType) {
         return accountRepository.existsByUserIdAndAccountTypeAndStatus(userId, accountType, AccountStatus.ACTIVE);
     }
 
+    @RateLimit(endpoint = "validate-account")
+    @Cacheable(value = "account-existence", key = "'number_' + #accountNumber")
+    @Retry(name = "database")
     @Transactional(readOnly = true)
     public boolean accountExistsByNumber(String accountNumber) {
         return accountRepository.existsByAccountNumber(accountNumber);
@@ -362,5 +373,59 @@ public class AccountService {
             default ->
                 "ACC";
         };
+    }
+
+    public void fallbackGetAccountBalance(String accountId, StreamObserver<BigDecimal> responseObserver, Exception ex) {
+        UserContext currentUser = UserContextHolder.getContext();
+
+        log.error("🚨 Balance retrieval fallback triggered - Account: {}, User: {}, Error: {}",
+                accountId,
+                currentUser != null ? currentUser.getUsername() : "unknown",
+                ex.getMessage());
+
+        String errorMessage;
+        if (ex instanceof java.sql.SQLException || ex instanceof org.springframework.dao.DataAccessException) {
+            errorMessage = "Database service is temporarily unavailable. Balance retrieval failed.";
+        } else if (ex instanceof java.util.concurrent.TimeoutException) {
+            errorMessage = "Balance retrieval request timed out. Please try again.";
+        } else {
+            errorMessage = "Balance retrieval service is temporarily unavailable. Please try again later.";
+        }
+
+        responseObserver.onError(new RuntimeException(errorMessage, ex));
+    }
+
+    public void fallbackUpdateBalance(UpdateBalanceRequest request, StreamObserver<UpdateBalanceResponse> responseObserver, Exception ex) {
+        UserContext currentUser = UserContextHolder.getContext();
+
+        log.error("🚨 Balance update fallback triggered - Account: {}, User: {}, Amount: {}, Operation: {}, Error: {}",
+                request.getAccountNumber(),
+                currentUser != null ? currentUser.getUsername() : "unknown",
+                request.getAmount(),
+                request.getOperation(),
+                ex.getMessage());
+
+        String errorMessage;
+        if (ex instanceof java.sql.SQLException || ex instanceof org.springframework.dao.DataAccessException) {
+            errorMessage = "Database service is temporarily unavailable. Balance update failed.";
+        } else if (ex instanceof java.util.concurrent.TimeoutException) {
+            errorMessage = "Balance update request timed out. Please try again.";
+        } else {
+            errorMessage = "Balance update service is temporarily unavailable. Please try again later.";
+        }
+
+        UpdateBalanceResponse errorResponse = UpdateBalanceResponse.newBuilder()
+                .setSuccess(false)
+                .setNewBalance(0)
+                .setMessage(errorMessage)
+                .build();
+
+        responseObserver.onNext(errorResponse);
+        responseObserver.onCompleted();
+
+        if (currentUser != null) {
+            log.warn("💰 Critical: Balance update failed for user {} on account {}",
+                    currentUser.getUserId(), request.getAccountNumber());
+        }
     }
 }

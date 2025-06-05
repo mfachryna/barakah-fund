@@ -32,11 +32,11 @@ public class Transaction {
     @Column(name = "reference_number", nullable = false, unique = true, length = 50)
     private String referenceNumber;
 
-     @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private TransactionType type;
 
-     @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
     private TransactionStatus status = TransactionStatus.PENDING;
@@ -74,13 +74,12 @@ public class Transaction {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "category_id")
+    @Column(name = "category_id", insertable = true, updatable = false)
     private String categoryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", insertable = false, updatable = false)
     @JsonIgnoreProperties({"transactions", "hibernateLazyInitializer", "handler"})
-    // @JoinColumn(name = "category_id", insertable = false, updatable = false)
     private TransactionCategory category;
 
     @Column(name = "balance_before", precision = 19, scale = 2)
@@ -126,16 +125,21 @@ public class Transaction {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
     private String generateReferenceNumber() {
         LocalDateTime now = LocalDateTime.now();
         String timestamp = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-        String random = String.format("%04d", (int)(Math.random() * 10000));
+        String random = String.format("%04d", (int) (Math.random() * 10000));
         return String.format("TXN-%s-%s", timestamp, random);
     }
 
     @Override
     public String toString() {
-        return String.format("Transaction{id='%s', type=%s, status=%s, amount=%s, reference='%s'}", 
+        return String.format("Transaction{id='%s', type=%s, status=%s, amount=%s, reference='%s'}",
                 transactionId, type, status, amount, referenceNumber);
+    }
+
+    public String getCategoryId() {
+        return category != null ? category.getCategoryId() : null;
     }
 }

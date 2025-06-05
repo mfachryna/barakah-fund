@@ -18,10 +18,12 @@ import java.math.BigDecimal;
 public class CreateTransactionRequestDto {
     
     @NotBlank(message = "Transaction type is required")
-    private String transactionType;
+    private String type;
     
     @NotBlank(message = "Account ID is required")
-    private String accountId;
+    private String fromAccountNumber;
+//    @NotBlank(message = "Account ID is required")
+    private String toAccountNumber;
     
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
@@ -31,6 +33,7 @@ public class CreateTransactionRequestDto {
     private String description;
     
     private String categoryId;
-    private String reference;
+    private String externalReference;
+    private String externalProvider;
     private String notes;
 }

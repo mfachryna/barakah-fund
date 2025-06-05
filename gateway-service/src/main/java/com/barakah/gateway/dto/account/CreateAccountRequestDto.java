@@ -23,10 +23,8 @@ public class CreateAccountRequestDto {
     @Size(max = 100, message = "Account name must not exceed 100 characters")
     private String accountName;
     
-    private String userId; // Optional, will use current user if not provided
+    private String userId; 
     
     @NotNull(message = "Initial balance is required")
-    private BigDecimal initialBalance;
-    
-    private String currency = "IDR";
+    private BigDecimal initialDeposit;
 }

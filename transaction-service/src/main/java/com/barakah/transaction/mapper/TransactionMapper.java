@@ -327,7 +327,7 @@ public class TransactionMapper {
             return 0;
         }
 
-        return amount.multiply(BigDecimal.valueOf(100)).longValue();
+        return amount.longValue();
     }
 
     private BigDecimal convertToBigDecimal(long amount) {

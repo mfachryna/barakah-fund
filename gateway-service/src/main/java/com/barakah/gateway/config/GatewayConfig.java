@@ -43,11 +43,10 @@ public class GatewayConfig {
         return CircuitBreaker.of("transaction-service", config);
     }
 
-    // Development profile configuration
     @Configuration
     @Profile("dev")
     static class DevConfig {
-        
+
         @Bean
         public String devMessage() {
             log.info("Gateway running in DEV mode - using fallback responses for missing services");
@@ -55,11 +54,10 @@ public class GatewayConfig {
         }
     }
 
-    // Production profile configuration  
     @Configuration
     @Profile("prod")
     static class ProdConfig {
-        
+
         @Bean
         public String prodMessage() {
             log.info("Gateway running in PRODUCTION mode - all services must be available");

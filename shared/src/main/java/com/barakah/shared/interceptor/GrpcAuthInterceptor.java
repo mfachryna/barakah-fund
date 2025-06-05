@@ -51,7 +51,6 @@ public class GrpcAuthInterceptor implements ServerInterceptor {
             if (serviceAuth != null && isValidServiceAuth(serviceAuth)) {
                 return handleServiceToServiceCall(call, headers, next, method);
             }
-
             return handleBearerTokenAuth(call, headers, next, method);
 
         } catch (AuthExceptions.InvalidTokenException | AuthExceptions.TokenExpiredException e) {

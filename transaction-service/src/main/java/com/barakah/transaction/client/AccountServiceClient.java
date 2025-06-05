@@ -3,10 +3,13 @@ package com.barakah.transaction.client;
 import com.barakah.account.proto.v1.*;
 import com.barakah.transaction.dto.AccountInfo;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -47,13 +50,15 @@ public class AccountServiceClient {
 
     @CircuitBreaker(name = "account-service", fallbackMethod = "fallbackCreditAccount")
     @Retry(name = "account-service")
+    @RateLimiter(name = "account-service-calls")
+    @CacheEvict(value = {"account-info", "balances"}, key = "#accountId")
     public void creditAccount(String accountId, BigDecimal amount) {
         try {
             log.info("Crediting account {} with amount {}", accountId, amount);
 
             CreditAccountRequest request = CreditAccountRequest.newBuilder()
                     .setAccountId(accountId)
-                    .setAmount(amount.multiply(BigDecimal.valueOf(100)).longValue()) // Convert to cents
+                    .setAmount(amount.longValue())
                     .setDescription("Transfer credit")
                     .build();
 
@@ -73,6 +78,8 @@ public class AccountServiceClient {
 
     @CircuitBreaker(name = "account-service", fallbackMethod = "fallbackAccountExists")
     @Retry(name = "account-service")
+    @RateLimiter(name = "account-service-calls")
+    @Cacheable(value = "account-existence", key = "#accountId")
     public boolean accountExists(String accountId) {
         try {
             GetAccountRequest request = GetAccountRequest.newBuilder()
@@ -92,6 +99,8 @@ public class AccountServiceClient {
 
     @CircuitBreaker(name = "account-service", fallbackMethod = "fallbackHasAccountAccess")
     @Retry(name = "account-service")
+    @RateLimiter(name = "account-service-calls")
+    @Cacheable(value = "account-access", key = "#accountId + '_' + #userId")
     public boolean hasAccountAccess(String accountId, String userId) {
         try {
             CheckAccountAccessRequest request = CheckAccountAccessRequest.newBuilder()
@@ -108,8 +117,10 @@ public class AccountServiceClient {
         }
     }
 
-    @CircuitBreaker(name = "account-service", fallbackMethod = "fallbackHasAccountAccess")
+    @CircuitBreaker(name = "account-service", fallbackMethod = "fallbackGetAccountByNumber")
     @Retry(name = "account-service")
+    @RateLimiter(name = "account-service-calls")
+    @Cacheable(value = "account-info", key = "#accountId")
     public AccountInfo getAccountByNumber(String accountId) {
         try {
             GetAccountByNumberRequest request = GetAccountByNumberRequest.newBuilder()
@@ -133,8 +144,10 @@ public class AccountServiceClient {
         }
     }
 
-    @CircuitBreaker(name = "account-service", fallbackMethod = "fallbackHasAccountAccess")
+    @CircuitBreaker(name = "account-service", fallbackMethod = "fallbackGetAccount")
     @Retry(name = "account-service")
+    @RateLimiter(name = "account-service-calls")
+    @Cacheable(value = "account-info", key = "#accountId")
     public AccountInfo getAccount(String accountId) {
         try {
             GetAccountRequest request = GetAccountRequest.newBuilder()
@@ -200,5 +213,15 @@ public class AccountServiceClient {
     public boolean fallbackHasAccountAccess(String accountId, String userId, Exception ex) {
         log.warn("Account service unavailable, denying account access for user {} on account {}", userId, accountId, ex);
         return false;
+    }
+
+    public AccountInfo fallbackGetAccountByNumber(String accountId, Exception ex) {
+        log.error("Account service unavailable for getAccountByNumber: {}", accountId, ex);
+        throw new RuntimeException("Account service unavailable", ex);
+    }
+
+    public AccountInfo fallbackGetAccount(String accountId, Exception ex) {
+        log.error("Account service unavailable for getAccount: {}", accountId, ex);
+        throw new RuntimeException("Account service unavailable", ex);
     }
 }

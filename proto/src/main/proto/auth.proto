@@ -152,11 +152,11 @@ message RefreshTokenResponse {
 
 
 message LogoutRequest {
-  string accessToken = 1 [(validate.rules).string = {
+  string access_token = 1 [(validate.rules).string = {
     min_len: 10,
     max_len: 2000
   }];
-  string refreshToken = 2 [(validate.rules).string = {
+  string refresh_token = 2 [(validate.rules).string = {
     min_len: 10,
     max_len: 2000
   }];

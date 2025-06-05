@@ -1,10 +1,8 @@
 package com.barakah.transaction.grpc;
 
 import com.barakah.common.proto.v1.*;
-import com.barakah.shared.context.UserContext;
 import com.barakah.transaction.entity.Transaction;
 import com.barakah.transaction.enums.TransactionDirection;
-import com.barakah.transaction.enums.TransferType;
 import com.barakah.transaction.mapper.TransactionMapper;
 import com.barakah.transaction.proto.v1.*;
 import com.barakah.transaction.service.TransactionService;
@@ -19,12 +17,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
-import java.text.DateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
+import com.barakah.shared.annotation.RateLimit;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 
 @Slf4j
 @GrpcService
@@ -34,6 +35,10 @@ public class TransactionGrpcService extends TransactionServiceGrpc.TransactionSe
     private final TransactionService transactionService;
     private final TransactionMapper mapper;
 
+    @RateLimit(endpoint = "grpc-create-transaction")
+    @Bulkhead(name = "transaction-creation")
+    @RateLimiter(name = "transaction-creation")
+    @CacheEvict(value = {"user-transactions", "account-transactions", "user-statistics"}, allEntries = true)
     @Override
     public void createTransaction(CreateTransactionRequest request, StreamObserver<CreateTransactionResponse> responseObserver) {
         log.info("Creating transaction: {} from {} to {} amount {}",
@@ -76,6 +81,11 @@ public class TransactionGrpcService extends TransactionServiceGrpc.TransactionSe
 
     }
 
+    @RateLimit(endpoint = "grpc-list-transactions")
+    @Cacheable(value = "user-transactions", 
+        key = "T(com.barakah.shared.context.UserContextHolder).getCurrentUserId() + '_grpc_' + #request.pageRequest.page + '_' + #request.pageRequest.size + '_' + #request.filtersMap.hashCode() + '_' + #request.search")
+    @Retry(name = "database")
+    @RateLimiter(name = "transaction-queries")
     @Override
     public void listTransactions(ListTransactionsRequest request, StreamObserver<ListTransactionsResponse> responseObserver) {
         log.debug("Listing transactions with filters");
@@ -100,6 +110,15 @@ public class TransactionGrpcService extends TransactionServiceGrpc.TransactionSe
 
     }
 
+    @RateLimit(endpoint = "grpc-update-transaction")
+    @Retry(name = "database")
+    @RateLimiter(name = "transaction-processing")
+    @Caching(evict = {
+        @CacheEvict(value = "transactions", key = "#request.transactionId"),
+        @CacheEvict(value = "user-transactions", allEntries = true),
+        @CacheEvict(value = "account-transactions", allEntries = true),
+        @CacheEvict(value = "user-statistics", allEntries = true)
+    })
     @Override
     public void updateTransactionStatus(UpdateTransactionStatusRequest request, StreamObserver<UpdateTransactionStatusResponse> responseObserver) {
         log.info("Updating transaction status: {} to {}", request.getTransactionId(), request.getStatus());
@@ -119,6 +138,11 @@ public class TransactionGrpcService extends TransactionServiceGrpc.TransactionSe
         responseObserver.onCompleted();
     }
 
+    @RateLimit(endpoint = "grpc-get-account-transactions")
+    @Cacheable(value = "account-transactions", 
+        key = "#request.accountNumber + '_grpc_' + #request.direction + '_' + #request.pageRequest.page + '_' + #request.fromDate + '_' + #request.toDate")
+    @Retry(name = "database")
+    @RateLimiter(name = "transaction-queries")
     @Override
     public void getTransactionsByAccount(GetTransactionsByAccountRequest request, StreamObserver<GetTransactionsByAccountResponse> responseObserver) {
 
@@ -152,9 +176,13 @@ public class TransactionGrpcService extends TransactionServiceGrpc.TransactionSe
 
     }
 
+    @RateLimit(endpoint = "grpc-get-transaction-logs")
+    @Cacheable(value = "transaction-logs", 
+        key = "#request.pageRequest.page + '_' + #request.pageRequest.size + '_logs'")
+    @Retry(name = "database")
+    @RateLimiter(name = "transaction-queries")
     @Override
-    public void getTransactionLogs(GetTransactionLogsRequest
-                                           request, StreamObserver<GetTransactionLogsResponse> responseObserver) {
+    public void getTransactionLogs(GetTransactionLogsRequest request, StreamObserver<GetTransactionLogsResponse> responseObserver) {
 
         log.debug("Getting transaction logs");
 

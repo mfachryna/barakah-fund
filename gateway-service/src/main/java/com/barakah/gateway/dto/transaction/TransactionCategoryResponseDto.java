@@ -18,6 +18,7 @@ public class TransactionCategoryResponseDto {
     private String color;
     private String icon;
     private Boolean isActive;
+    private Boolean isSystem;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
