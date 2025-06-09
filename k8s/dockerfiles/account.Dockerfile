@@ -9,6 +9,8 @@ WORKDIR /workspace
 COPY proto/ proto/
 COPY shared/ shared/
 COPY account-service/ account-service/
+RUN rm -rf /workspace/account-service/src/main/resources/*.yaml
+
 
 WORKDIR /workspace/proto
 RUN --mount=type=cache,target=/root/.m2 mvn clean install -DskipTests

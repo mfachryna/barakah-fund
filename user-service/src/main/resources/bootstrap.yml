@@ -1,12 +1,12 @@
-spring:
-  application:
-    name: user-service
+# spring:
+#   application:
+#     name: user-service
   # config:
     # import: "optional:configserver:http://localhost:8888"
-  cloud:
-    config:
-      enabled: false
-      fail-fast: false
+  # cloud:
+  #   config:
+  #     enabled: false
+  #     fail-fast: false
     # vault:
     #   enabled: false
     #   host: ${SPRING_CLOUD_VAULT_HOST:localhost}

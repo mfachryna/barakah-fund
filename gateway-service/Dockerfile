@@ -1,9 +1,5 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
-LABEL maintainer="Barakah Fund Team"
-LABEL service="gateway-service"
-LABEL version="1.0.0"
-
 WORKDIR /workspace
 
 COPY proto/pom.xml proto/pom.xml

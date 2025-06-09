@@ -1,0 +1,69 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-kafka
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "barakah-fund.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: kafka
+  template:
+    metadata:
+      labels:
+        {{- include "barakah-fund.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: {{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}
+          imagePullPolicy: {{ .Values.kafka.image.pullPolicy }}
+          ports:
+            - name: kafka
+              containerPort: 9092
+              protocol: TCP
+          env:
+            - name: KAFKA_ENABLE_KRAFT
+              value: "yes"
+            - name: KAFKA_CFG_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_CFG_NODE_ID
+              value: "1"
+            - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
+              value: "1@localhost:9093"
+            - name: KAFKA_KRAFT_CLUSTER_ID
+              value: {{ .Values.kafka.kraft.clusterId | quote }}
+            - name: KAFKA_CFG_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+            - name: KAFKA_CFG_ADVERTISED_LISTENERS
+              value: {{ printf "PLAINTEXT://%s-kafka:9092" (include "barakah-fund.fullname" .) | quote }}
+            - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+            - name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: ALLOW_PLAINTEXT_LISTENER
+              value: "yes"
+            - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
+              value: "true"
+            - name: KAFKA_CFG_NUM_PARTITIONS
+              value: "3"
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx1g -Xms1g"
+          resources:
+            {{- toYaml .Values.kafka.resources | nindent 12 }}
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /bitnami/kafka/data
+      volumes:
+        - name: kafka-data
+          {{- if .Values.kafka.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "barakah-fund.fullname" . }}-kafka-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+{{- end }}

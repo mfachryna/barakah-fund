@@ -1,0 +1,103 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-keycloak
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "barakah-fund.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: keycloak
+  template:
+    metadata:
+      labels:
+        {{- include "barakah-fund.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: {{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - start-dev
+            - --import-realm
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: {{ .Values.keycloak.auth.adminUser | quote }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: {{ .Values.keycloak.auth.adminPassword | quote }}
+            
+            - name: KC_DB
+              value: {{ .Values.keycloak.externalDatabase.vendor | quote }}
+            - name: KC_DB_URL
+              value: "jdbc:postgresql://{{ .Values.keycloak.externalDatabase.host }}:{{ .Values.keycloak.externalDatabase.port }}/{{ .Values.keycloak.externalDatabase.database }}"
+            - name: KC_DB_USERNAME
+              value: {{ .Values.keycloak.externalDatabase.user | quote }}
+            - name: KC_DB_PASSWORD
+              value: {{ .Values.keycloak.externalDatabase.password | quote }}
+            
+            - name: KC_HEALTH_ENABLED
+              value: "{{ .Values.keycloak.health.enabled }}"
+            - name: KC_METRICS_ENABLED
+              value: "{{ .Values.keycloak.metrics.enabled }}"
+            - name: KC_LOG_LEVEL
+              value: "INFO"
+            - name: JAVA_OPTS_APPEND
+              value: "-Djgroups.dns.query={{ include "barakah-fund.fullname" . }}-keycloak"
+          
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: management
+              containerPort: 9000
+              protocol: TCP
+
+          
+          readinessProbe:
+            httpGet:
+              path: /realms/master
+              port: 8080
+            initialDelaySeconds: {{ .Values.keycloak.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.keycloak.readinessProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: {{ .Values.keycloak.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.keycloak.livenessProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          startupProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+            successThreshold: 1
+          
+          resources:
+            {{- toYaml .Values.keycloak.resources | nindent 12 }}
+          
+          volumeMounts:
+            - name: realm-config
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+      
+      volumes:
+        - name: realm-config
+          configMap:
+            name: {{ include "barakah-fund.fullname" . }}-keycloak-realm
+{{- end }}

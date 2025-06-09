@@ -1,0 +1,27 @@
+{{- if .Values.gatewayService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-gateway-service
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-service
+spec:
+  type: {{ .Values.gatewayService.service.type }}
+  ports:
+    - port: {{ .Values.gatewayService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.gatewayService.service.grpcPort }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+    - port: {{ .Values.gatewayService.service.managementPort }}
+      targetPort: management
+      protocol: TCP
+      name: management
+  selector:
+    {{- include "barakah-fund.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-service
+{{- end }}

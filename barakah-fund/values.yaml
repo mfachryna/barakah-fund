@@ -1,0 +1,1155 @@
+global:
+    imageRegistry: ""
+    imagePullSecrets: []
+
+app:
+    name: barakah-fund
+    version: "1.0.0"
+
+image:
+    repository: barakah-fund
+    tag: "latest"
+    pullPolicy: Never
+
+replicaCount: 1
+
+service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    annotations: {}
+
+resources:
+    limits:
+        cpu: 500m
+        memory: 512Mi
+    requests:
+        cpu: 250m
+        memory: 256Mi
+
+postgresql:
+    enabled: true
+
+    auth:
+        postgresPassword: "adminpassword123"
+        username: "barakah_user"
+        password: "userpassword123"
+        database: "barakah_fund"
+
+    primary:
+        persistence:
+            enabled: false
+            size: 8Gi
+        resources:
+            limits:
+                memory: 512Mi
+                cpu: 500m
+            requests:
+                memory: 256Mi
+                cpu: 250m
+        initdb:
+            scripts:
+                user: postgres
+                password: "adminpassword123"
+                00_test_echo.sh: |
+
+                    echo "Test script execution. START!"
+                01_init_keycloak.sql: |
+                    -- Create Keycloak database and user
+                    CREATE DATABASE keycloak;
+                    CREATE USER keycloak_user WITH ENCRYPTED PASSWORD 'keycloak_password123';
+                    GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak_user;
+                    ALTER USER keycloak_user CREATEDB;
+
+                    CREATE DATABASE barakah_users;
+                    CREATE DATABASE barakah_accounts;
+                    CREATE DATABASE barakah_transactions;
+
+                    CREATE USER barakah_user WITH PASSWORD 'barakah_user_password';
+                    CREATE USER barakah_account WITH PASSWORD 'barakah_account_password';
+                    CREATE USER barakah_transaction WITH PASSWORD 'barakah_transaction_password';
+
+                    GRANT ALL PRIVILEGES ON DATABASE barakah_users TO barakah_user;
+                    GRANT ALL PRIVILEGES ON DATABASE barakah_accounts TO barakah_account;
+                    GRANT ALL PRIVILEGES ON DATABASE barakah_transactions TO barakah_transaction;
+
+                    \c barakah_users;
+                    GRANT ALL ON SCHEMA public TO barakah_user;
+                    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO barakah_user;
+                    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO barakah_user;
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO barakah_user;
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO barakah_user;
+
+                    \c barakah_accounts;
+                    GRANT ALL ON SCHEMA public TO barakah_account;
+                    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO barakah_account;
+                    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO barakah_account;
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO barakah_account;
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO barakah_account;
+
+                    \c barakah_transactions;
+                    GRANT ALL ON SCHEMA public TO barakah_transaction;
+                    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO barakah_transaction;
+                    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO barakah_transaction;
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO barakah_transaction;
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO barakah_transaction;
+    volumePermissions:
+        enabled: true
+
+keycloak:
+    image:
+        repository: "quay.io/keycloak/keycloak"
+        tag: "24.0.5"
+    enabled: true
+    auth:
+        adminUser: admin
+        adminPassword: "admin123"
+        managementUser: manager
+        managementPassword: "manager123"
+
+    postgresql:
+        enabled: false
+
+    externalDatabase:
+        vendor: postgres
+        host: "barakah-fund-dev-postgresql"
+        port: 5432
+        user: "keycloak_user"
+        password: "keycloak_password123"
+        database: "keycloak"
+
+    service:
+        type: ClusterIP
+        ports:
+            http: 8080
+            https: 8443
+
+    resources:
+        limits:
+            memory: 1Gi
+            cpu: 1000m
+        requests:
+            memory: 512Mi
+            cpu: 500m
+
+    health:
+        enabled: true
+        metricsEnabled: true
+        healthCheckPath: "/health/ready"
+        healthCheckInterval: 30s
+        healthCheckTimeout: 10s
+
+    metrics:
+        enabled: true
+        metricsPath: "/metrics"
+        metricsPort: 8080
+
+    livenessProbe:
+        enabled: true
+        initialDelaySeconds: 300
+        periodSeconds: 30
+
+    readinessProbe:
+        enabled: true
+        initialDelaySeconds: 60
+        periodSeconds: 10
+
+env:
+    SERVER_PORT: "8080"
+    SPRING_PROFILES_ACTIVE: "kubernetes,k8s"
+
+    LOGGING_LEVEL_ROOT: "INFO"
+    LOGGING_LEVEL_COM_BARAKAH: "DEBUG"
+
+    JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://barakah-fund-dev-keycloak:8080/realms/barakah-fund"
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://barakah-fund-dev-keycloak:8080/realms/barakah-fund/protocol/openid-connect/certs"
+
+security:
+    enabled: true
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+    jwtSecret: "your-jwt-secret-key-change-this-in-production"
+
+ingress:
+    enabled: false
+    className: "nginx"
+    annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: barakah-fund.local
+        paths:
+            - path: /
+              pathType: Prefix
+    tls: []
+
+healthCheck:
+    enabled: true
+    livenessProbe:
+        httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+        initialDelaySeconds: 120
+        periodSeconds: 30
+    readinessProbe:
+        httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 10
+
+secrets: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+redis:
+    enabled: true
+    image:
+        repository: "redis"
+        tag: "7-alpine"
+        pullPolicy: IfNotPresent
+
+    service:
+        type: ClusterIP
+        port: 6379
+
+    resources:
+        limits:
+            memory: 256Mi
+            cpu: 250m
+        requests:
+            memory: 128Mi
+            cpu: 100m
+
+    config:
+        maxmemory: "128mb"
+        maxmemoryPolicy: "allkeys-lru"
+        notifyKeyspaceEvents: "Ex"
+        databases: "16"
+        save: ""
+
+    auth:
+        enabled: false
+
+userService:
+    enabled: true
+    image:
+        repository: "barakah/user-service"
+        tag: "latest"
+        pullPolicy: Never
+
+    replicaCount: 1
+
+    service:
+        type: ClusterIP
+        port: 8081
+        grpcPort: 9091
+        managementPort: 8080
+
+    resources:
+        limits:
+            memory: 1Gi
+            cpu: 500m
+        requests:
+            memory: 512Mi
+            cpu: 250m
+
+    env:
+        SERVER_PORT: "8081"
+        GRPC_SERVER_PORT: "9091"
+        MANAGEMENT_SERVER_PORT: "8080"
+        SERVER_SERVLET_CONTEXT_PATH: "/user-service"
+
+        SPRING_DATASOURCE_URL: 'jdbc:postgresql://{{ include "barakah-fund.fullname" . }}-postgresql:5432/barakah_users'
+        SPRING_DATASOURCE_USERNAME: "barakah_users_user"
+        SPRING_DATASOURCE_PASSWORD: "barakah_user_password"
+        SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+
+        SPRING_FLYWAY_ENABLED: "true"
+        SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+        SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
+        SPRING_FLYWAY_LOCATIONS: "classpath:db/migration"
+        SPRING_FLYWAY_BASELINE_VERSION: "0"
+
+        SPRING_REDIS_HOST: '{{ include "barakah-fund.fullname" . }}-redis'
+        SPRING_REDIS_PORT: "6379"
+        SPRING_REDIS_DATABASE: "0"
+        SPRING_CACHE_TYPE: "redis"
+        SPRING_CACHE_REDIS_TIME_TO_LIVE: "3600000"
+
+        KEYCLOAK_URL: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080'
+        KEYCLOAK_AUTH_SERVER_URL: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080'
+        KEYCLOAK_REALM: "barakah-fund"
+        KEYCLOAK_CLIENT_ID: "user-service"
+        KEYCLOAK_RESOURCE: "user-service"
+        KEYCLOAK_CLIENT_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_CREDENTIALS_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_ADMIN_USERNAME: "admin"
+        KEYCLOAK_ADMIN_PASSWORD: "admin123"
+        KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
+
+
+        SPRING_CLOUD_KUBERNETES_ENABLED: "true"
+        SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "true"
+        SPRING_CLOUD_SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED: "true"
+
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080/realms/barakah-fund/protocol/openid-connect/certs'
+
+        MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus,flyway"
+        MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
+        MANAGEMENT_HEALTH_READINESS_STATE_ENABLED: "true"
+        MANAGEMENT_HEALTH_LIVENESS_STATE_ENABLED: "true"
+
+        LOGGING_LEVEL_COM_BARAKAH_USER: "DEBUG"
+        LOGGING_LEVEL_ROOT: "INFO"
+        LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: "DEBUG"
+        LOGGING_PATTERN_CONSOLE: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+        
+        MANAGEMENT_SECURITY_ENABLED: "false"
+        SPRING_SECURITY_BASIC_ENABLED: "false"
+        SPRING_ACTUATOR_SECURITY_ENABLED: "false"
+
+    readinessProbe:
+        enabled: true
+        initialDelaySeconds: 45
+        periodSeconds: 10
+        path: "/actuator/health/readiness"
+
+    livenessProbe:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 30
+        path: "/actuator/health/liveness"
+
+    startupProbe:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        path: "/actuator/health"
+
+accountService:
+    enabled: true
+    replicaCount: 1
+
+    image:
+        repository: "barakah/account-service"
+        tag: "latest"
+        pullPolicy: Never
+
+    service:
+        type: ClusterIP
+        port: 8082
+        grpcPort: 9092
+        managementPort: 8080
+
+    resources:
+        limits:
+            memory: 1Gi
+            cpu: 500m
+        requests:
+            memory: 512Mi
+            cpu: 250m
+
+    env:
+        SERVER_PORT: "8082"
+        SERVER_SERVLET_CONTEXT_PATH: "/account-service"
+        GRPC_SERVER_PORT: "9092"
+        GRPC_SERVER_ENABLE_REFLECTION: "true"
+        GRPC_SERVER_MAX_INBOUND_MESSAGE_SIZE: "4MB"
+        GRPC_SERVER_MAX_OUTBOUND_MESSAGE_SIZE: "4MB"
+        MANAGEMENT_SERVER_PORT: "8080"
+
+        SPRING_APPLICATION_NAME: "account-service"
+        SPRING_PROFILES_ACTIVE: "k8s"
+
+        SPRING_DATASOURCE_URL: 'jdbc:postgresql://{{ include "barakah-fund.fullname" . }}-postgresql:5432/barakah_accounts'
+        SPRING_DATASOURCE_USERNAME: "barakah_account"
+        SPRING_DATASOURCE_PASSWORD: "barakah_account_password"
+        SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+
+        SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "10"
+        SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "5"
+        SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "20000"
+        SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "300000"
+        SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "1200000"
+
+        SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+        SPRING_JPA_HIBERNATE_NAMING_PHYSICAL_STRATEGY: "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl"
+        SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+        SPRING_JPA_PROPERTIES_HIBERNATE_SHOW_SQL: "true"
+        SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+        SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_BATC_SIZE: "20"
+        SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_BATC_SIZE: "20"
+        SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_INSERTS: "true"
+        SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_UPDATES: "true"
+        SPRING_JPA_OPEN_IN_VIEW: "false"
+
+        SPRING_FLYWAY_ENABLED: "true"
+        SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+        SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
+        SPRING_FLYWAY_LOCATIONS: "classpath:db/migration"
+        SPRING_FLYWAY_BASELINE_VERSION: "0"
+
+        SPRING_REDIS_HOST: '{{ include "barakah-fund.fullname" . }}-redis'
+        SPRING_REDIS_PORT: "6379"
+        SPRING_REDIS_DATABASE: "1"
+        SPRING_REDIS_TIMEOUT: "2000"
+        SPRING_CACHE_TYPE: "redis"
+        SPRING_CACHE_REDIS_TIME_TO_LIVE: "3600000"
+
+        KEYCLOAK_URL: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080'
+        KEYCLOAK_AUTH_SERVER_URL: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080'
+        KEYCLOAK_REALM: "barakah-fund"
+        KEYCLOAK_CLIENT_ID: "user-service"
+        KEYCLOAK_RESOURCE: "user-service"
+        KEYCLOAK_CLIENT_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_CREDENTIALS_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_ADMIN_USERNAME: "admin"
+        KEYCLOAK_ADMIN_PASSWORD: "admin123"
+        KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
+
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080/realms/barakah-fund/protocol/openid-connect/certs'
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080/realms/barakah-fund'
+
+        SPRING_CLOUD_CONFIG_ENABLED: "false"
+        SPRING_CLOUD_VAULT_ENABLED: "false"
+        SPRING_CLOUD_KUBERNETES_ENABLED: "true"
+        SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "true"
+        SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+
+        MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus,flyway"
+        MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
+        MANAGEMENT_HEALTH_READINESS_STATE_ENABLED: "true"
+        MANAGEMENT_HEALTH_LIVENESS_STATE_ENABLED: "true"
+        MANAGEMENT_SECURITY_ENABLED: "false"
+
+        LOGGING_LEVEL_COM_BARAKAH_ACCOUNT: "INFO"
+        LOGGING_LEVEL_ROOT: "INFO"
+        LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: "INFO"
+        LOGGING_LEVEL_ORG_FLYWAYDB: "INFO"
+        LOGGING_PATTERN_CONSOLE: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_DEFAULT_FAILURE_RATE_THRESHOLD: "50"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_DEFAULT_WAIT_DURATION_IN_OPEN_STATE: "30s"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_DEFAULT_SLIDING_WINDOW_SIZE: "10"
+        RESILIENCE4J_RETRY_CONFIGS_DEFAULT_RETRY_EXCEPTION_PREDICATE: "com.barakah.shared.config.ServiceRetryPredicate"
+
+        RATE_LIMIT_PER_ENDPOINT_CREATE_ACCOUNT_LIMIT: "5"
+        RATE_LIMIT_PER_ENDPOINT_CREATE_ACCOUNT_DURATION: "60s"
+        RATE_LIMIT_PER_ENDPOINT_UPDATE_BALANCE_LIMIT: "10"
+        RATE_LIMIT_PER_ENDPOINT_UPDATE_BALANCE_DURATION: "60s"
+
+        FEATURES_ACCOUNT_VALIDATION_ENABLED: "true"
+        FEATURES_BALANCE_ENCRYPTION_ENABLED: "true"
+        FEATURES_AUDIT_LOGGING_ENABLED: "true"
+        FEATURES_CACHE_ENABLED: "true"
+
+        SPRING_KAFKA_BOOTSTRAP_SERVERS: "{{ include \"barakah-fund.fullname\" . }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+        SPRING_KAFKA_CONSUMER_GROUP_ID: "account-service"
+        SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: "earliest"
+        SPRING_KAFKA_CONSUMER_ENABLE_AUTO_COMMIT: "false"
+        SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: "org.apache.kafka.common.serialization.StringDeserializer"
+        SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: "org.springframework.kafka.support.serializer.JsonDeserializer"
+        SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES: "com.barakah.shared.event"
+        
+        SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+        SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: "org.springframework.kafka.support.serializer.JsonSerializer"
+        SPRING_KAFKA_PRODUCER_ACKS: "all"
+        SPRING_KAFKA_PRODUCER_RETRIES: "3"
+        SPRING_KAFKA_PRODUCER_PROPERTIES_ENABLE_IDEMPOTENCE: "true"
+        
+        SPRING_KAFKA_ADMIN_CLIENT_ID: "account-service-admin"
+        
+        EVENTS_ACCOUNT_TOPIC: "account-events"
+        EVENTS_BALANCE_TOPIC: "balance-events"
+        EVENTS_TRANSACTION_TOPIC: "transaction-events"
+        
+        MANAGEMENT_SECURITY_ENABLED: "false"
+        SPRING_SECURITY_BASIC_ENABLED: "false"
+        SPRING_ACTUATOR_SECURITY_ENABLED: "false"
+
+    readinessProbe:
+        enabled: true
+        initialDelaySeconds: 45
+        periodSeconds: 10
+        path: "/actuator/health/readiness"
+
+    livenessProbe:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 30
+        path: "/actuator/health/liveness"
+
+    startupProbe:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        path: "/actuator/health"
+
+serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+
+    rbac:
+        create: true
+        additionalRules: []
+
+    automountServiceAccountToken: true
+
+    podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+            type: RuntimeDefault
+
+    securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+            drop:
+                - ALL
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        runAsUser: 1001
+
+transactionService:
+    enabled: true
+    replicaCount: 1
+
+    image:
+        repository: "barakah/transaction-service"
+        tag: "latest"
+        pullPolicy: Never
+
+    service:
+        type: ClusterIP
+        port: 8083
+        grpcPort: 9093
+        managementPort: 8080
+
+    resources:
+        limits:
+            memory: 1Gi
+            cpu: 500m
+        requests:
+            memory: 512Mi
+            cpu: 250m
+
+    env:
+        SERVER_PORT: "8083"
+        SERVER_SERVLET_CONTEXT_PATH: "/transaction-service"
+        GRPC_SERVER_PORT: "9093"
+        MANAGEMENT_SERVER_PORT: "8080"
+
+        SPRING_APPLICATION_NAME: "transaction-service"
+        SPRING_PROFILES_ACTIVE: "k8s"
+
+        SPRING_DATASOURCE_URL: 'jdbc:postgresql://{{ include "barakah-fund.fullname" . }}-postgresql:5432/barakah_transactions'
+        SPRING_DATASOURCE_USERNAME: "barakah_transaction"
+        SPRING_DATASOURCE_PASSWORD: "barakah_transaction_password"
+        SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+
+        SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "10"
+        SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "5"
+        SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "20000"
+        SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "300000"
+        SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "1200000"
+
+        SPRING_JPA_HIBERNATE_DDL_AUTO: "none"
+        SPRING_JPA_HIBERNATE_NAMING_PHYSICAL_STRATEGY: "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl"
+        SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+        SPRING_JPA_PROPERTIES_HIBERNATE_SHOW_SQL: "true"
+        SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+        SPRING_JPA_PROPERTIES_HIBERNATE_USE_SQL_COMMENTS: "true"
+        SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_BATCH_SIZE: "20"
+        SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_INSERTS: "true"
+        SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_UPDATES: "true"
+        SPRING_JPA_SHOW_SQL: "true"
+        SPRING_JPA_OPEN_IN_VIEW: "false"
+
+        SPRING_FLYWAY_ENABLED: "true"
+        SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+        SPRING_FLYWAY_LOCATIONS: "classpath:db/migration"
+        SPRING_FLYWAY_BASELINE_VERSION: "0"
+
+        SPRING_TRANSACTION_DEFAULT_TIMEOUT: "30"
+
+        SPRING_REDIS_HOST: '{{ include "barakah-fund.fullname" . }}-redis'
+        SPRING_REDIS_PORT: "6379"
+        SPRING_REDIS_DATABASE: "2"
+        SPRING_REDIS_TIMEOUT: "2000"
+        SPRING_CACHE_TYPE: "redis"
+        SPRING_CACHE_REDIS_TIME_TO_LIVE: "300000"
+        SPRING_CACHE_REDIS_CACHE_NULL_VALUES: "false"
+        SPRING_CACHE_REDIS_KEY_PREFIX: "txn:"
+
+        GRPC_CLIENT_ENABLE_DISCOVERY: "false"
+        GRPC_CLIENT_ACCOUNT_SERVICE_ENABLE_DISCOVERY: "false"
+        
+        SPRING_CLOUD_CONFIG_ENABLED: "false"
+        SPRING_CLOUD_VAULT_ENABLED: "false"
+        SPRING_CLOUD_GATEWAY_DISCOVERY_ENABLED: "false"
+        SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "false"
+        SPRING_CLOUD_KUBERNETES_ENABLED: "false"
+        SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "false"
+        SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED_ALL_NAMESPACE: "true"
+        SPRING_CLOUD_SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED: "true"
+        SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID: "true"
+        SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
+
+        GRPC_SERVER_ENABLE_REFLECTION: "true"
+        GRPC_SERVER_MAX_INBOUND_MESSAGE_SIZE: "4MB"
+        GRPC_SERVER_MAX_OUTBOUND_MESSAGE_SIZE: "4MB"
+        
+        GRPC_CLIENT_ACCOUNT_SERVICE_ADDRESS: 'static://{{ include "barakah-fund.fullname" . }}-account-service:9092'
+        GRPC_CLIENT_ACCOUNT_SERVICE_NEGOTIATION_TYPE: "plaintext"
+        GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIME: "30s"
+        GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIMEOUT: "5s"
+        GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_WITHOUT_CALLS: "true"
+        GRPC_CLIENT_ACCOUNT_SERVICE_MAX_INBOUND_MESSAGE_SIZE: "4MB"
+        GRPC_CLIENT_ACCOUNT_SERVICE_MAX_INBOUND_METADATA_SIZE: "8192"
+        GRPC_CLIENT_ACCOUNT_SERVICE_DEADLINE: "10s"
+        GRPC_CLIENT_ACCOUNT_SERVICE_RETRY: "true"
+        GRPC_CLIENT_ACCOUNT_SERVICE_MAX_RETRY_ATTEMPTS: "3"
+        GRPC_CLIENT_ACCOUNT_SERVICE_DEFAULT_LOAD_BALANCING_POLICY: "pick_first"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_ADDRESS: 'static://{{ include "barakah-fund.fullname" . }}-account-service:9092'
+        # GRPC_CLIENT_ACCOUNT_SERVICE_NEGOTIATION_TYPE: "plaintext"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIME: "30s"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIMEOUT: "5s"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_WITHOUT_CALLS: "true"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIME: "30s"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIMEOUT: "5s"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_MAX_INBOUND_MESSAGE_SIZE: "4MB"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_MAX_INBOUND_METADATA_SIZE: "8192"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_DEADLINE: "10s"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_RETRY: "true"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_MAX_RETRY_ATTEMPTS: "3"
+        # GRPC_CLIENT_ACCOUNT_SERVICE_DEFAULT_LOAD_BALANCING_POLICY: "pick_first"
+
+        KEYCLOAK_AUTH_SERVER_URL: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080'
+        KEYCLOAK_REALM: "barakah-fund"
+        KEYCLOAK_RESOURCE: "user-service"
+        KEYCLOAK_CLIENT_ID: "user-service"
+        KEYCLOAK_CLIENT_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_CREDENTIALS_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_ADMIN_USERNAME: "admin"
+        KEYCLOAK_ADMIN_PASSWORD: "admin123"
+        KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
+        KEYCLOAK_MOCK_ENABLED: "false"
+
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080/realms/barakah-fund/protocol/openid-connect/certs'
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080/realms/barakah-fund'
+
+        MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus,flyway"
+        MANAGEMENT_ENDPOINTS_WEB_BASE_PATH: "/actuator"
+        MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
+        MANAGEMENT_ENDPOINT_HEALTH_SHOW_COMPONENTS: "always"
+        MANAGEMENT_ENDPOINT_METRICS_ENABLED: "true"
+        MANAGEMENT_HEALTH_READINESS_STATE_ENABLED: "true"
+        MANAGEMENT_HEALTH_LIVENESS_STATE_ENABLED: "true"
+        MANAGEMENT_HEALTH_EUREKA_ENABLED: "false"
+        MANAGEMENT_HEALTH_DB_ENABLED: "true"
+        MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "true"
+
+        SPRING_KAFKA_BOOTSTRAP_SERVERS: "{{ include \"barakah-fund.fullname\" . }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+        SPRING_KAFKA_PRODUCER_KEY_SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+        SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+        SPRING_KAFKA_PRODUCER_ACKS: "all"
+        SPRING_KAFKA_PRODUCER_RETRIES: "3"
+        SPRING_KAFKA_PRODUCER_PROPERTIES_ENABLE_IDEMPOTENCE: "true"
+        SPRING_KAFKA_PRODUCER_PROPERTIES_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: "1"
+        
+        SPRING_KAFKA_CONSUMER_GROUP_ID: "transaction-service"
+        SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER: "org.apache.kafka.common.serialization.StringDeserializer"
+        SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER: "org.apache.kafka.common.serialization.StringDeserializer"
+        SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET: "earliest"
+
+        APP_KAFKA_TOPICS_TRANSACTION_EVENTS: "transaction-events"
+        APP_KAFKA_TOPICS_NOTIFICATION_EVENTS: "notification-events"
+        APP_KAFKA_TOPICS_AUDIT_EVENTS: "audit-events"
+
+        LOGGING_LEVEL_COM_BARAKAH: "INFO"
+        LOGGING_LEVEL_COM_BARAKAH_TRANSACTION: "DEBUG"
+        LOGGING_LEVEL_COM_BARAKAH_SHARED: "DEBUG"
+        LOGGING_LEVEL_ROOT: "INFO"
+        LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: "INFO"
+        LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: "INFO"
+        LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_TRANSACTION: "DEBUG"
+        LOGGING_LEVEL_ORG_KEYCLOAK: "INFO"
+        LOGGING_LEVEL_ORG_HIBERNATE_SQL: "DEBUG"
+        LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASICBINDER: "TRACE"
+        LOGGING_LEVEL_NET_DEVH_BOOT_GRPC: "DEBUG"
+        LOGGING_LEVEL_IO_GRPC: "INFO"
+        LOGGING_LEVEL_ORG_FLYWAYDB: "INFO"
+        LOGGING_PATTERN_CONSOLE: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+        APP_SECURITY_CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:4200,http://localhost:8080"
+        APP_SECURITY_CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+        APP_SECURITY_CORS_ALLOWED_HEADERS: "*"
+        APP_SECURITY_CORS_ALLOW_CREDENTIALS: "true"
+        APP_SECURITY_CORS_MAX_AGE: "3600"
+        APP_SECURITY_JWT_SECRET: "k8s-transaction-secret-key-change-in-production"
+        APP_SECURITY_JWT_EXPIRATION: "86400000"
+
+        APP_SERVICES_ACCOUNT_SERVICE_URL: 'http://{{ include "barakah-fund.fullname" . }}-account-service:9092'
+        APP_SERVICES_ACCOUNT_SERVICE_TIMEOUT: "5000"
+        APP_SERVICES_USER_SERVICE_URL: 'http://{{ include "barakah-fund.fullname" . }}-user-service:9091'
+        APP_SERVICES_USER_SERVICE_TIMEOUT: "5000"
+        APP_SERVICES_NOTIFICATION_SERVICE_URL: 'http://{{ include "barakah-fund.fullname" . }}-notification-service:9094'
+        APP_SERVICES_NOTIFICATION_SERVICE_TIMEOUT: "3000"
+
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_REGISTER_HEALTH_INDICATOR: "true"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_MINIMUM_NUMBER_OF_CALLS: "5"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_FAILURE_RATE_THRESHOLD: "50"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_WAIT_DURATION_IN_OPEN_STATE: "30s"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_AUTOMATIC_TRANSITION_FROM_OPEN_TO_HALF_OPEN_ENABLED: "true"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_SLIDING_WINDOW_SIZE: "10"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_SLIDING_WINDOW_TYPE: "count_based"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_PERMITTED_NUMBER_OF_CALLS_IN_HALF_OPEN_STATE: "3"
+        RESILIENCE4J_RETRY_CONFIGS_DEFAULT_RETRY_EXCEPTION_PREDICATE: "com.barakah.shared.config.ServiceRetryPredicate"
+
+        RESILIENCE4J_RETRY_INSTANCES_ACCOUNT_SERVICE_MAX_ATTEMPTS: "3"
+        RESILIENCE4J_RETRY_INSTANCES_ACCOUNT_SERVICE_WAIT_DURATION: "2s"
+        RESILIENCE4J_RETRY_INSTANCES_ACCOUNT_SERVICE_EXPONENTIAL_BACKOFF_MULTIPLIER: "2"
+
+        RESILIENCE4J_RATELIMITER_INSTANCES_TRANSACTION_CREATION_LIMIT_FOR_PERIOD: "20"
+        RESILIENCE4J_RATELIMITER_INSTANCES_TRANSACTION_CREATION_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_TRANSACTION_CREATION_TIMEOUT_DURATION: "2s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_PROCESS_TRANSACTION_LIMIT_FOR_PERIOD: "30"
+        RESILIENCE4J_RATELIMITER_INSTANCES_PROCESS_TRANSACTION_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_PROCESS_TRANSACTION_TIMEOUT_DURATION: "1s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_QUERY_TRANSACTION_LIMIT_FOR_PERIOD: "100"
+        RESILIENCE4J_RATELIMITER_INSTANCES_QUERY_TRANSACTION_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_QUERY_TRANSACTION_TIMEOUT_DURATION: "500ms"
+
+        RESILIENCE4J_BULKHEAD_INSTANCES_TRANSACTION_CREATION_MAX_CONCURRENT_CALLS: "30"
+        RESILIENCE4J_BULKHEAD_INSTANCES_TRANSACTION_CREATION_MAX_WAIT_DURATION: "2s"
+        RESILIENCE4J_BULKHEAD_INSTANCES_TRANSACTION_PROCESSING_MAX_CONCURRENT_CALLS: "20"
+        RESILIENCE4J_BULKHEAD_INSTANCES_TRANSACTION_PROCESSING_MAX_WAIT_DURATION: "1s"
+        RESILIENCE4J_BULKHEAD_INSTANCES_TRANSACTION_QUERIES_MAX_CONCURRENT_CALLS: "100"
+        RESILIENCE4J_BULKHEAD_INSTANCES_TRANSACTION_QUERIES_MAX_WAIT_DURATION: "500ms"
+
+        RATE_LIMIT_ENABLED: "true"
+        RATE_LIMIT_GLOBAL_REQUESTS_PER_MINUTE: "2000"
+        RATE_LIMIT_PER_USER_REQUESTS_PER_MINUTE: "200"
+        RATE_LIMIT_PER_ENDPOINT_GRPC_CREATE_TRANSACTION: "30"
+        RATE_LIMIT_PER_ENDPOINT_CREATE_TRANSACTION: "30"
+        RATE_LIMIT_PER_ENDPOINT_GRPC_GET_TRANSACTION: "200"
+        RATE_LIMIT_PER_ENDPOINT_GRPC_LIST_TRANSACTIONS: "100"
+        RATE_LIMIT_PER_ENDPOINT_GRPC_UPDATE_TRANSACTION: "50"
+        RATE_LIMIT_PER_ENDPOINT_UPDATE_TRANSACTION: "50"
+        RATE_LIMIT_PER_ENDPOINT_PROCESS_TRANSACTION: "100"
+
+        FEATURES_EMAIL_VERIFICATION: "false"
+        FEATURES_SMS_VERIFICATION: "false"
+        FEATURES_AUDIT_LOGGING: "true"
+        FEATURES_RATE_LIMITING: "true"
+        FEATURES_CACHE_ENABLED: "true"
+
+        MANAGEMENT_SECURITY_ENABLED: "false"
+        SPRING_SECURITY_BASIC_ENABLED: "false"
+        SPRING_ACTUATOR_SECURITY_ENABLED: "false"
+
+    readinessProbe:
+        enabled: true
+        initialDelaySeconds: 45
+        periodSeconds: 10
+        path: "/actuator/health/readiness"
+
+    livenessProbe:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 30
+        path: "/actuator/health/liveness"
+
+    startupProbe:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        path: "/actuator/health"
+
+
+gatewayService:
+    enabled: true
+    replicaCount: 1
+
+    image:
+        repository: "barakah/gateway-service"
+        tag: "latest"
+        pullPolicy: Never
+
+    service:
+        type: ClusterIP
+        port: 8070
+        grpcPort: 9090
+        managementPort: 8080
+
+    resources:
+        limits:
+            memory: 1Gi
+            cpu: 500m
+        requests:
+            memory: 512Mi
+            cpu: 250m
+
+
+    env:
+        SERVER_PORT: "8070"
+        
+        SPRING_APPLICATION_NAME: "gateway-service"
+        
+        SPRING_CLOUD_GATEWAY_DISCOVERY_ENABLED: "false"
+        SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "false"
+        SPRING_CLOUD_KUBERNETES_ENABLED: "true"
+        SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "true"
+        SPRING_CLOUD_SERVICE_REGISTRY_AUTO_REGISTRATION_ENABLED: "true"
+        SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID: "true"
+        
+        SPRING_REDIS_HOST: '{{ include "barakah-fund.fullname" . }}-redis'
+        SPRING_REDIS_PORT: "6379"
+        SPRING_REDIS_DATABASE: "0"
+        SPRING_REDIS_TIMEOUT: "2000"
+        SPRING_REDIS_LETTUCE_POOL_MAX_ACTIVE: "10"
+        SPRING_REDIS_LETTUCE_POOL_MAX_IDLE: "8"
+        SPRING_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
+        SPRING_REDIS_LETTUCE_POOL_MAX_WAIT: "-1ms"
+        
+        SPRING_CACHE_TYPE: "redis"
+        SPRING_CACHE_CACHE_NAMES: "gateway-token-validation,gateway-users,gateway-current-user,gateway-user-lists,gateway-grpc-current-user,gateway-grpc-users,gateway-accounts,gateway-user-accounts,gateway-balances,gateway-grpc-accounts,gateway-grpc-account-lists,gateway-grpc-balances,gateway-transactions,gateway-account-transactions,gateway-user-transactions,gateway-categories,gateway-category-lists,gateway-grpc-transactions,gateway-grpc-transaction-lists,gateway-grpc-account-transactions,gateway-grpc-transaction-logs,gateway-grpc-categories,gateway-grpc-category-lists"
+        SPRING_CACHE_REDIS_TIME_TO_LIVE: "120000"
+        
+        GRPC_SERVER_PORT: "9090"
+        GRPC_SERVER_ENABLE_REFLECTION: "true"
+        GRPC_SERVER_MAX_INBOUND_MESSAGE_SIZE: "4MB"
+        GRPC_SERVER_MAX_OUTBOUND_MESSAGE_SIZE: "4MB"
+        
+        GRPC_CLIENT_USER_SERVICE_ADDRESS: 'static://{{ include "barakah-fund.fullname" . }}-user-service:9091'
+        GRPC_CLIENT_USER_SERVICE_NEGOTIATION_TYPE: "plaintext"
+        GRPC_CLIENT_USER_SERVICE_KEEP_ALIVE_TIME: "30s"
+        GRPC_CLIENT_USER_SERVICE_KEEP_ALIVE_TIMEOUT: "5s"
+        GRPC_CLIENT_USER_SERVICE_KEEP_ALIVE_WITHOUT_CALLS: "true"
+        GRPC_CLIENT_USER_SERVICE_MAX_RETRY_ATTEMPTS: "3"
+        
+        GRPC_CLIENT_ACCOUNT_SERVICE_ADDRESS: 'static://{{ include "barakah-fund.fullname" . }}-account-service:9092'
+        GRPC_CLIENT_ACCOUNT_SERVICE_NEGOTIATION_TYPE: "plaintext"
+        GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIME: "30s"
+        GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_TIMEOUT: "5s"
+        GRPC_CLIENT_ACCOUNT_SERVICE_KEEP_ALIVE_WITHOUT_CALLS: "true"
+        GRPC_CLIENT_ACCOUNT_SERVICE_MAX_RETRY_ATTEMPTS: "3"
+        
+        GRPC_CLIENT_TRANSACTION_SERVICE_ADDRESS: 'static://{{ include "barakah-fund.fullname" . }}-transaction-service:9093'
+        GRPC_CLIENT_TRANSACTION_SERVICE_NEGOTIATION_TYPE: "plaintext"
+        GRPC_CLIENT_TRANSACTION_SERVICE_KEEP_ALIVE_TIME: "30s"
+        GRPC_CLIENT_TRANSACTION_SERVICE_KEEP_ALIVE_TIMEOUT: "5s"
+        GRPC_CLIENT_TRANSACTION_SERVICE_KEEP_ALIVE_WITHOUT_CALLS: "true"
+        GRPC_CLIENT_TRANSACTION_SERVICE_MAX_RETRY_ATTEMPTS: "3"
+
+        KEYCLOAK_URL: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080'
+        KEYCLOAK_AUTH_SERVER_URL: 'http://{{ include "barakah-fund.fullname" . }}-keycloak:8080'
+        KEYCLOAK_REALM: "barakah-fund"
+        KEYCLOAK_CLIENT_ID: "user-service"
+        KEYCLOAK_RESOURCE: "user-service"
+        KEYCLOAK_CLIENT_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_CREDENTIALS_SECRET: "user-service-secret-change-me"
+        KEYCLOAK_ADMIN_USERNAME: "admin"
+        KEYCLOAK_ADMIN_PASSWORD: "admin123"
+        KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
+        KEYCLOAK_MOCK_ENABLED: "false"
+        
+        EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: 'http://eureka-user:eureka-pass@{{ include "barakah-fund.fullname" . }}-eureka-server:8761/eureka/'
+        EUREKA_CLIENT_EUREKA_SERVER_CONNECT_TIMEOUT_SECONDS: "5"
+        EUREKA_CLIENT_EUREKA_SERVER_READ_TIMEOUT_SECONDS: "8"
+        EUREKA_CLIENT_REGISTRY_FETCH_INTERVAL_SECONDS: "30"
+        EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+        EUREKA_CLIENT_FETCH_REGISTRY: "true"
+        EUREKA_CLIENT_HEALTHCHECK_ENABLED: "true"
+        EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+        EUREKA_INSTANCE_HOSTNAME: '{{ include "barakah-fund.fullname" . }}-gateway-service'
+        EUREKA_INSTANCE_INSTANCE_ID: "gateway-service:${random.value}"
+        EUREKA_INSTANCE_LEASE_RENEWAL_INTERVAL_IN_SECONDS: "30"
+        EUREKA_INSTANCE_LEASE_EXPIRATION_DURATION_IN_SECONDS: "90"
+        EUREKA_INSTANCE_METADATA_MAP_GRPC_PORT: "9090"
+        EUREKA_INSTANCE_METADATA_MAP_GRPC_ENABLED: "true"
+        EUREKA_INSTANCE_METADATA_MAP_MANAGEMENT_CONTEXT_PATH: "/actuator"
+        
+        MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "*"
+        MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
+        MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED: "true"
+        
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_FAILURE_RATE_THRESHOLD: "50"
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_MINIMUM_NUMBER_OF_CALLS: "10"
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_WAIT_DURATION_IN_OPEN_STATE: "60s"
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_SLIDING_WINDOW_SIZE: "20"
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_SLIDING_WINDOW_TYPE: "COUNT_BASED"
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_PERMITTED_NUMBER_OF_CALLS_IN_HALF_OPEN_STATE: "5"
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_AUTOMATIC_TRANSITION_FROM_OPEN_TO_HALF_OPEN_ENABLED: "true"
+        RESILIENCE4J_CIRCUITBREAKER_CONFIGS_DEFAULT_RECORD_FAILURE_PREDICATE: "com.barakah.shared.config.ServiceFailurePredicate"
+        
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_AUTH_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_AUTH_SERVICE_FAILURE_RATE_THRESHOLD: "60"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_AUTH_SERVICE_MINIMUM_NUMBER_OF_CALLS: "5"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_AUTH_SERVICE_WAIT_DURATION_IN_OPEN_STATE: "30s"
+        
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_USER_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_USER_SERVICE_FAILURE_RATE_THRESHOLD: "50"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_USER_SERVICE_MINIMUM_NUMBER_OF_CALLS: "5"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_USER_SERVICE_WAIT_DURATION_IN_OPEN_STATE: "30s"
+        
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_FAILURE_RATE_THRESHOLD: "40"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_MINIMUM_NUMBER_OF_CALLS: "5"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_ACCOUNT_SERVICE_WAIT_DURATION_IN_OPEN_STATE: "45s"
+        
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_TRANSACTION_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_TRANSACTION_SERVICE_FAILURE_RATE_THRESHOLD: "40"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_TRANSACTION_SERVICE_MINIMUM_NUMBER_OF_CALLS: "5"
+        RESILIENCE4J_CIRCUITBREAKER_INSTANCES_TRANSACTION_SERVICE_WAIT_DURATION_IN_OPEN_STATE: "45s"
+        
+        RESILIENCE4J_RETRY_CONFIGS_DEFAULT_MAX_ATTEMPTS: "3"
+        RESILIENCE4J_RETRY_CONFIGS_DEFAULT_WAIT_DURATION: "500ms"
+        RESILIENCE4J_RETRY_CONFIGS_DEFAULT_EXPONENTIAL_BACKOFF_MULTIPLIER: "2"
+        RESILIENCE4J_RETRY_CONFIGS_DEFAULT_RETRY_EXCEPTION_PREDICATE: "com.barakah.shared.config.ServiceRetryPredicate"
+        
+        RESILIENCE4J_RETRY_INSTANCES_AUTH_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_RETRY_INSTANCES_AUTH_SERVICE_MAX_ATTEMPTS: "2"
+        RESILIENCE4J_RETRY_INSTANCES_AUTH_SERVICE_WAIT_DURATION: "1s"
+        
+        RESILIENCE4J_RETRY_INSTANCES_USER_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_RETRY_INSTANCES_USER_SERVICE_MAX_ATTEMPTS: "3"
+        RESILIENCE4J_RETRY_INSTANCES_USER_SERVICE_WAIT_DURATION: "500ms"
+        
+        RESILIENCE4J_RETRY_INSTANCES_ACCOUNT_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_RETRY_INSTANCES_ACCOUNT_SERVICE_MAX_ATTEMPTS: "3"
+        RESILIENCE4J_RETRY_INSTANCES_ACCOUNT_SERVICE_WAIT_DURATION: "200ms"
+        
+        RESILIENCE4J_RETRY_INSTANCES_TRANSACTION_SERVICE_BASE_CONFIG: "default"
+        RESILIENCE4J_RETRY_INSTANCES_TRANSACTION_SERVICE_MAX_ATTEMPTS: "3"
+        RESILIENCE4J_RETRY_INSTANCES_TRANSACTION_SERVICE_WAIT_DURATION: "200ms"
+        
+        RESILIENCE4J_RATELIMITER_CONFIGS_DEFAULT_LIMIT_FOR_PERIOD: "100"
+        RESILIENCE4J_RATELIMITER_CONFIGS_DEFAULT_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_CONFIGS_DEFAULT_TIMEOUT_DURATION: "1s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_AUTH_LIMIT_FOR_PERIOD: "100"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_AUTH_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_AUTH_TIMEOUT_DURATION: "2s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_AUTH_VALIDATION_LIMIT_FOR_PERIOD: "1000"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_AUTH_VALIDATION_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_AUTH_VALIDATION_TIMEOUT_DURATION: "500ms"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_USER_QUERIES_LIMIT_FOR_PERIOD: "500"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_USER_QUERIES_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_USER_QUERIES_TIMEOUT_DURATION: "1s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_USER_MUTATIONS_LIMIT_FOR_PERIOD: "50"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_USER_MUTATIONS_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_USER_MUTATIONS_TIMEOUT_DURATION: "2s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_ACCOUNT_QUERIES_LIMIT_FOR_PERIOD: "800"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_ACCOUNT_QUERIES_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_ACCOUNT_QUERIES_TIMEOUT_DURATION: "1s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_ACCOUNT_MUTATIONS_LIMIT_FOR_PERIOD: "100"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_ACCOUNT_MUTATIONS_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_ACCOUNT_MUTATIONS_TIMEOUT_DURATION: "2s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_TRANSACTION_QUERIES_LIMIT_FOR_PERIOD: "1000"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_TRANSACTION_QUERIES_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_TRANSACTION_QUERIES_TIMEOUT_DURATION: "1s"
+        
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_TRANSACTION_MUTATIONS_LIMIT_FOR_PERIOD: "200"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_TRANSACTION_MUTATIONS_LIMIT_REFRESH_PERIOD: "60s"
+        RESILIENCE4J_RATELIMITER_INSTANCES_GATEWAY_TRANSACTION_MUTATIONS_TIMEOUT_DURATION: "3s"
+        
+        RESILIENCE4J_BULKHEAD_CONFIGS_DEFAULT_MAX_CONCURRENT_CALLS: "10"
+        RESILIENCE4J_BULKHEAD_CONFIGS_DEFAULT_MAX_WAIT_DURATION: "1s"
+        
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_AUTHENTICATION_MAX_CONCURRENT_CALLS: "20"
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_AUTHENTICATION_MAX_WAIT_DURATION: "3s"
+        
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_USER_CREATION_MAX_CONCURRENT_CALLS: "5"
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_USER_CREATION_MAX_WAIT_DURATION: "3s"
+        
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_USER_MUTATIONS_MAX_CONCURRENT_CALLS: "10"
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_USER_MUTATIONS_MAX_WAIT_DURATION: "2s"
+        
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_ACCOUNT_CREATION_MAX_CONCURRENT_CALLS: "10"
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_ACCOUNT_CREATION_MAX_WAIT_DURATION: "2s"
+        
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_TRANSACTION_CREATION_MAX_CONCURRENT_CALLS: "15"
+        RESILIENCE4J_BULKHEAD_INSTANCES_GATEWAY_TRANSACTION_CREATION_MAX_WAIT_DURATION: "2s"
+        
+        RATE_LIMIT_ENABLED: "true"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_LOGIN: "20"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_REGISTER: "10"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_VALIDATE_TOKEN: "1000"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_REFRESH_TOKEN: "50"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_LOGOUT: "100"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GET_CURRENT_USER: "500"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GET_USER_BY_ID: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_LIST_USERS: "100"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_CREATE_USER: "10"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_UPDATE_USER: "20"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_DELETE_USER: "5"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_CURRENT_USER: "500"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_USER: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_LIST_ACCOUNTS: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GET_ACCOUNT: "300"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_CREATE_ACCOUNT: "10"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GET_BALANCE: "500"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_CREDIT_ACCOUNT: "50"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_DEBIT_ACCOUNT: "50"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_CREATE_ACCOUNT: "10"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_ACCOUNT: "300"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_LIST_ACCOUNTS: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_BALANCE: "500"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_CREATE_TRANSACTION: "50"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GET_TRANSACTION: "300"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_LIST_TRANSACTIONS: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GET_ACCOUNT_TRANSACTIONS: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GET_CATEGORY: "300"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_LIST_CATEGORIES: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_CREATE_TRANSACTION: "50"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_TRANSACTION: "300"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_LIST_TRANSACTIONS: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_TRANSACTIONS_BY_ACCOUNT: "200"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_TRANSACTION_LOGS: "100"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_GET_CATEGORY: "300"
+        RATE_LIMIT_PER_ENDPOINT_GATEWAY_GRPC_LIST_CATEGORIES: "200"
+        
+        LOGGING_LEVEL_COM_BARAKAH: "DEBUG"
+        LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CACHE: "DEBUG"
+        LOGGING_LEVEL_IO_GITHUB_RESILIENCE4J: "DEBUG"
+        LOGGING_LEVEL_NET_DEVH_BOOT_GRPC: "DEBUG"
+        LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_CLIENT: "DEBUG"
+        LOGGING_PATTERN_CONSOLE: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+        LOGGING_PATTERN_FILE: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+        LOGGING_FILE_NAME: "logs/gateway-service-k8s.log"
+        
+        FEATURES_RATE_LIMITING: "true"
+        FEATURES_CACHE_ENABLED: "true"
+        FEATURES_CIRCUIT_BREAKER_ENABLED: "true"
+        FEATURES_RETRY_ENABLED: "true"
+        FEATURES_BULKHEAD_ENABLED: "true"
+        FEATURES_METRICS_ENABLED: "true"
+        FEATURES_TRACING_ENABLED: "false"
+        
+        APP_GATEWAY_TIMEOUT_AUTH: "5s"
+        APP_GATEWAY_TIMEOUT_USER: "5s"
+        APP_GATEWAY_TIMEOUT_ACCOUNT: "10s"
+        APP_GATEWAY_TIMEOUT_TRANSACTION: "15s"
+        APP_GATEWAY_CACHE_DEFAULT_TTL: "120s"
+        APP_GATEWAY_CACHE_AUTH_TTL: "300s"
+        APP_GATEWAY_CACHE_USER_TTL: "300s"
+        APP_GATEWAY_CACHE_ACCOUNT_TTL: "120s"
+        APP_GATEWAY_CACHE_TRANSACTION_TTL: "60s"
+        APP_GATEWAY_PAGINATION_DEFAULT_SIZE: "20"
+        APP_GATEWAY_PAGINATION_MAX_SIZE: "100"
+
+        MANAGEMENT_SECURITY_ENABLED: "false"
+        SPRING_SECURITY_BASIC_ENABLED: "false"
+        SPRING_ACTUATOR_SECURITY_ENABLED: "false"
+
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://barakah-fund-dev-keycloak:8080/realms/barakah-fund"
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://barakah-fund-dev-keycloak:8080/realms/barakah-fund/protocol/openid-connect/certs"
+
+    readinessProbe:
+        enabled: true
+        initialDelaySeconds: 45
+        periodSeconds: 10
+        path: "/actuator/health/readiness"
+
+    livenessProbe:
+        enabled: true
+        initialDelaySeconds: 90
+        periodSeconds: 30
+        path: "/actuator/health/liveness"
+
+    startupProbe:
+        enabled: true
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        path: "/actuator/health"
+        
+
+kafka:
+  enabled: true
+  
+  image:
+    repository: "bitnami/kafka"
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 9092
+    
+  resources:
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+    requests:
+      memory: 1Gi
+      cpu: 500m
+  
+  persistence:
+    enabled: true
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    annotations: {}
+  
+  kraft:
+    enabled: true
+    clusterId: "MkU3OEVBNTcwNTJENDM2Qk"
+    nodeId: 1
+    brokerId: 1
+  
+  config:
+    processRoles: "broker,controller"
+    
+    listeners:
+      plaintext: 9092
+      controller: 9093
+    
+    allowPlaintextListener: true
+    listenerSecurityProtocolMap: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+    controllerListenerNames: "CONTROLLER"
+    
+    autoCreateTopicsEnable: true
+    numPartitions: 3
+    
+    logDirs: "/bitnami/kafka/data"
+    
+    defaultReplicationFactor: 1
+    offsetsTopicReplicationFactor: 1
+    transactionStateLogReplicationFactor: 1
+    transactionStateLogMinIsr: 1
+    
+    groupInitialRebalanceDelayMs: 0
+  
+  jvm:
+    heapOptions: "-Xmx512m -Xms512m"
+  
+  healthcheck:
+    enabled: true
+    livenessProbe:
+      initialDelaySeconds: 120
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 5
+    readinessProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 3

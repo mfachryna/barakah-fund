@@ -1,0 +1,23 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-kafka
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+spec:
+  type: {{ .Values.kafka.service.type }}
+  ports:
+    - port: {{ .Values.kafka.service.port }}
+      targetPort: kafka
+      protocol: TCP
+      name: kafka
+    - port: {{ .Values.kafka.config.listeners.controller }}
+      targetPort: controller
+      protocol: TCP
+      name: controller
+  selector:
+    {{- include "barakah-fund.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+{{- end }}

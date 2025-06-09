@@ -1,0 +1,142 @@
+{{- if .Values.transactionService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-transaction-service
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: transaction-service
+spec:
+  replicas: {{ .Values.transactionService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "barakah-fund.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: transaction-service
+  template:
+    metadata:
+      labels:
+        {{- include "barakah-fund.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: transaction-service
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "barakah-fund.fullname" . }}-app
+      initContainers:
+        # Wait for PostgreSQL to be ready
+        - name: wait-for-postgres
+          image: postgres:13-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "barakah-fund.fullname" . }}-postgresql -p 5432 -U postgres; do
+                echo "Waiting for PostgreSQL to be ready..."
+                sleep 5
+              done
+              echo "PostgreSQL is ready!"
+              
+              # Wait for transaction database and user to be ready
+              until PGPASSWORD=barakah_transaction_password psql -h {{ include "barakah-fund.fullname" . }}-postgresql -p 5432 -U barakah_transaction -d barakah_transactions -c "SELECT 1" > /dev/null 2>&1; do
+                echo "Waiting for barakah_transactions database and user to be ready..."
+                sleep 5
+              done
+              echo "Transaction database is ready!"
+        
+        # Wait for Redis to be ready
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -h {{ include "barakah-fund.fullname" . }}-redis -p 6379 ping | grep -q PONG; do
+                echo "Waiting for Redis to be ready..."
+                sleep 5
+              done
+              echo "Redis is ready!"
+        
+        # Wait for Keycloak to be ready
+        - name: wait-for-keycloak
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Keycloak port to be available..."
+              until nc -z {{ include "barakah-fund.fullname" . }}-keycloak 8080; do
+                echo "Keycloak port 8080 not ready, waiting..."
+                sleep 10
+              done
+              echo "Keycloak port is ready!"
+              
+              echo "Waiting additional 30 seconds for Keycloak to fully initialize..."
+              sleep 30
+              echo "Keycloak should be ready now!"
+
+        # Wait for Kafka to be ready
+        - name: wait-for-kafka
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka to be available..."
+              until nc -z {{ include "barakah-fund.fullname" . }}-kafka 9092; do
+                echo "Kafka port 9092 not ready, waiting..."
+                sleep 10
+              done
+              echo "Kafka is ready!"
+
+      containers:
+        - name: transaction-service
+          image: {{ .Values.transactionService.image.repository }}:{{ .Values.transactionService.image.tag }}
+          imagePullPolicy: {{ .Values.transactionService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8083
+              protocol: TCP
+            - name: grpc
+              containerPort: 9093
+              protocol: TCP
+            - name: management
+              containerPort: 8080
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.transactionService.env }}
+            - name: {{ $key }}
+              value: {{ tpl $value $ | quote }}
+            {{- end }}
+          
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: {{ .Values.transactionService.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.transactionService.readinessProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: {{ .Values.transactionService.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.transactionService.livenessProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: {{ .Values.transactionService.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.transactionService.startupProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+          
+          resources:
+            {{- toYaml .Values.transactionService.resources | nindent 12 }}
+{{- end }}

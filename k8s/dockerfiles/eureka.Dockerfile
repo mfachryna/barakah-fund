@@ -8,6 +8,7 @@ WORKDIR /workspace
 
 COPY eureka-server/pom.xml eureka-server/
 COPY eureka-server/src eureka-server/src
+RUN rm -rf /workspace/account-service/src/main/resources/*.yaml
 
 WORKDIR /workspace/eureka-server
 RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline -B

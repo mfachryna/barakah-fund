@@ -25,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,13 +55,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     ValidateTokenResponseDto validation = authService.validateToken(validateRequest);
 
                     if (validation.getValid()) {
-                        List<SimpleGrantedAuthority> authorities = validation.getRoles().stream()
-                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                                .collect(Collectors.toList());
+                        List<SimpleGrantedAuthority> authorities = new ArrayList<>(List.of(new SimpleGrantedAuthority("ROLE_" + validation.getRoles())));
 
                         authorities.addAll(validation.getPermissions().stream()
                                 .map(SimpleGrantedAuthority::new)
-                                .collect(Collectors.toList()));
+                                .toList());
 
                         UsernamePasswordAuthenticationToken authentication
                                 = new UsernamePasswordAuthenticationToken(

@@ -1,0 +1,28 @@
+{{- if and .Values.kafka.enabled .Values.kafka.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-kafka-data
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+  {{- with .Values.kafka.persistence.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.kafka.persistence.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.kafka.persistence.size | quote }}
+  {{- if .Values.kafka.persistence.storageClass }}
+  {{- if (eq "-" .Values.kafka.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.kafka.persistence.storageClass | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}

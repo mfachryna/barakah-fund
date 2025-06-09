@@ -1,0 +1,27 @@
+{{- if .Values.userService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-user-service
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-service
+spec:
+  type: {{ .Values.userService.service.type }}
+  ports:
+    - port: {{ .Values.userService.service.port }}
+      targetPort: {{ .Values.userService.env.SERVER_PORT }}
+      protocol: TCP
+      name: http
+    - port: {{ .Values.userService.service.grpcPort }}
+      targetPort: {{ .Values.userService.env.GRPC_SERVER_PORT }}
+      protocol: TCP
+      name: grpc
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: management
+  selector:
+    {{- include "barakah-fund.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: user-service
+{{- end }}

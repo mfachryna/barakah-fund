@@ -17,7 +17,7 @@ public class ValidateTokenResponseDto {
     private String userId;
     private String username;
     private String email;
-    private List<String> roles;
+    private String roles;
     private List<String> permissions;
     private LocalDateTime issuedAt;
     private LocalDateTime expiresAt;

@@ -1,0 +1,150 @@
+{{- if .Values.accountService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-account-service
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: account-service
+spec:
+  replicas: {{ .Values.accountService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "barakah-fund.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: account-service
+  template:
+    metadata:
+      labels:
+        {{- include "barakah-fund.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: account-service
+    spec:
+      serviceAccountName: {{ include "barakah-fund.fullname" . }}-app
+      initContainers:
+        - name: wait-for-postgresql
+          image: postgres:15-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "barakah-fund.fullname" . }}-postgresql -p 5432 -U postgres; do
+                echo "Waiting for PostgreSQL to be ready..."
+                sleep 5
+              done
+              echo "PostgreSQL is ready!"
+        
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -h {{ include "barakah-fund.fullname" . }}-redis -p 6379 ping | grep -q PONG; do
+                echo "Waiting for Redis to be ready..."
+                sleep 5
+              done
+              echo "Redis is ready!"
+        
+        - name: wait-for-keycloak
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Keycloak port to be available..."
+              until nc -z {{ include "barakah-fund.fullname" . }}-keycloak 8080; do
+                echo "Keycloak port 8080 not ready, waiting..."
+                sleep 10
+              done
+              echo "Keycloak port is ready!"
+
+        - name: wait-for-kafka
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka to be ready..."
+              until nc -z {{ include "barakah-fund.fullname" . }}-kafka 9092; do
+                echo "Kafka not ready, waiting..."
+                sleep 10
+              done
+              echo "Kafka is ready!"
+              
+              # Give Kafka time to fully initialize
+              sleep 60
+              echo "Kafka wait complete!"
+            
+      containers:
+        - name: account-service
+          image: {{ .Values.accountService.image.repository }}:{{ .Values.accountService.image.tag }}
+          imagePullPolicy: {{ .Values.accountService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+            - name: grpc
+              containerPort: 9092
+              protocol: TCP
+            - name: management
+              containerPort: 8080
+              protocol: TCP
+          
+          env:
+            {{- range $key, $value := .Values.accountService.env }}
+            - name: {{ $key }}
+              value: {{ tpl $value $ | quote }}
+            {{- end }}
+          
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+          
+          resources:
+            requests:
+              memory: {{ .Values.accountService.resources.requests.memory }}
+              cpu: {{ .Values.accountService.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.accountService.resources.limits.memory }}
+              cpu: {{ .Values.accountService.resources.limits.cpu }}
+          
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /app/logs
+      
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+      
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+{{- end }}

@@ -1,0 +1,43 @@
+{{- if .Values.redis.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-redis-config
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+data:
+  redis.conf: |
+    # Redis configuration for Barakah Fund caching
+    
+    # Memory settings
+    maxmemory {{ .Values.redis.config.maxmemory }}
+    maxmemory-policy {{ .Values.redis.config.maxmemoryPolicy }}
+    
+    # Keyspace notifications (for cache eviction events)
+    notify-keyspace-events {{ .Values.redis.config.notifyKeyspaceEvents }}
+    
+    # Database settings
+    databases {{ .Values.redis.config.databases }}
+    
+    # Persistence settings (disabled for development)
+    {{- if eq .Values.redis.config.save "" }}
+    save ""
+    {{- end }}
+    
+    # Network settings
+    tcp-keepalive 300
+    timeout 0
+    
+    # Logging
+    loglevel notice
+    
+    # Security settings
+    {{- if .Values.redis.auth.enabled }}
+    requirepass {{ .Values.redis.auth.password }}
+    {{- end }}
+    
+    # Performance tuning
+    tcp-backlog 511
+    hz 10
+{{- end }}

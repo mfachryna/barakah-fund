@@ -9,6 +9,9 @@ WORKDIR /workspace
 COPY proto/ proto/
 COPY shared/ shared/
 COPY transaction-service/ transaction-service/
+RUN rm -rf /workspace/account-service/src/main/resources/application.yaml
+RUN rm -rf /workspace/account-service/src/main/resources/bootstrap.yaml
+RUN rm -rf /workspace/account-service/src/main/resources/application-docker.yaml
 
 WORKDIR /workspace/proto
 RUN --mount=type=cache,target=/root/.m2 mvn clean install -DskipTests

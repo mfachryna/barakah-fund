@@ -1,0 +1,89 @@
+{{- if .Values.gatewayService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-gateway-service
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-service
+spec:
+  replicas: {{ .Values.gatewayService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "barakah-fund.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gateway-service
+  template:
+    metadata:
+      labels:
+        {{- include "barakah-fund.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: gateway-service
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "barakah-fund.fullname" . }}-app
+      initContainers:
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -h {{ include "barakah-fund.fullname" . }}-redis -p 6379 ping | grep -q PONG; do
+                echo "Waiting for Redis to be ready..."
+                sleep 5
+              done
+              echo "Redis is ready!"
+        
+      containers:
+        - name: gateway-service
+          image: {{ .Values.gatewayService.image.repository }}:{{ .Values.gatewayService.image.tag }}
+          imagePullPolicy: {{ .Values.gatewayService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8070
+              protocol: TCP
+            - name: grpc
+              containerPort: 9090
+              protocol: TCP
+            - name: management
+              containerPort: 8080
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.gatewayService.env }}
+            - name: {{ $key }}
+              value: {{ tpl $value $ | quote }}
+            {{- end }}
+          
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.gatewayService.readinessProbe.path }}
+              port: 8080
+            initialDelaySeconds: {{ .Values.gatewayService.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.gatewayService.readinessProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.gatewayService.livenessProbe.path }}
+              port: 8080
+            initialDelaySeconds: {{ .Values.gatewayService.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.gatewayService.livenessProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          startupProbe:
+            httpGet:
+              path: {{ .Values.gatewayService.startupProbe.path }}
+              port: 8080
+            initialDelaySeconds: {{ .Values.gatewayService.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.gatewayService.startupProbe.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+          
+          resources:
+            {{- toYaml .Values.gatewayService.resources | nindent 12 }}
+{{- end }}

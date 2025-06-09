@@ -1,0 +1,27 @@
+{{- if .Values.accountService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-account-service
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: account-service
+spec:
+  type: {{ .Values.accountService.service.type }}
+  ports:
+    - port: {{ .Values.accountService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.accountService.service.grpcPort }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+    - port: {{ .Values.accountService.service.managementPort }}
+      targetPort: management
+      protocol: TCP
+      name: management
+  selector:
+    {{- include "barakah-fund.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: account-service
+{{- end }}  

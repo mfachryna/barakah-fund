@@ -145,6 +145,7 @@ public class AuthMapper {
                 .userId(response.getUserInfo().getUserId())
                 .username(response.getUserInfo().getUsername())
                 .email(response.getUserInfo().getEmail())
+                .roles(response.getUserInfo().getRole().toString())
                 .build();
     }
 }

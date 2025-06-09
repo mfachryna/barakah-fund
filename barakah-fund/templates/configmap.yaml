@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-config
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+data:
+  
+  SERVER_PORT: {{ .Values.env.SERVER_PORT | quote }}
+  SPRING_PROFILES_ACTIVE: {{ .Values.env.SPRING_PROFILES_ACTIVE | quote }}
+  
+  
+  LOGGING_LEVEL_ROOT: {{ .Values.env.LOGGING_LEVEL_ROOT | quote }}
+  LOGGING_LEVEL_COM_BARAKAH: {{ .Values.env.LOGGING_LEVEL_COM_BARAKAH | quote }}
+  
+  
+  {{- if .Values.postgresql.enabled }}
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://{{ include "barakah-fund.fullname" . }}-postgresql:5432/{{ .Values.postgresql.auth.database }}"
+  SPRING_DATASOURCE_USERNAME: {{ .Values.postgresql.auth.username | quote }}
+  {{- else }}
+  SPRING_DATASOURCE_URL: {{ .Values.env.SPRING_DATASOURCE_URL | quote }}
+  SPRING_DATASOURCE_USERNAME: {{ .Values.env.SPRING_DATASOURCE_USERNAME | quote }}
+  {{- end }}
+  
+  
+  {{- if .Values.keycloak.enabled }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://{{ include "barakah-fund.fullname" . }}-keycloak:{{ .Values.keycloak.service.ports.http }}/realms/barakah-fund"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://{{ include "barakah-fund.fullname" . }}-keycloak:{{ .Values.keycloak.service.ports.http }}/realms/barakah-fund/protocol/openid-connect/certs"
+  KEYCLOAK_AUTH_SERVER_URL: "http://{{ include "barakah-fund.fullname" . }}-keycloak:{{ .Values.keycloak.service.ports.http }}"
+  KEYCLOAK_REALM: "barakah-fund"
+  KEYCLOAK_RESOURCE: "barakah-fund-backend"
+  {{- else }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: {{ .Values.env.SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI | quote }}
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: {{ .Values.env.SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI | quote }}
+  {{- end }}
+  
+  JAVA_OPTS: {{ .Values.env.JAVA_OPTS | quote }}
+  
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "when-authorized"
+  MANAGEMENT_HEALTH_PROBES_ENABLED: "true"

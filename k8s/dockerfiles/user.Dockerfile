@@ -9,6 +9,7 @@ WORKDIR /workspace
 COPY proto/ proto/
 COPY shared/ shared/
 COPY user-service/ user-service/
+RUN rm -rf /workspace/user-service/src/main/resources
 
 WORKDIR /workspace/proto
 RUN --mount=type=cache,target=/root/.m2 mvn clean install -DskipTests

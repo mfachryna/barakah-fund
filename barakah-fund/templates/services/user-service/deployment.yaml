@@ -1,0 +1,130 @@
+{{- if .Values.userService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-user-service
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-service
+spec:
+  replicas: {{ .Values.userService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "barakah-fund.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: user-service
+  template:
+    metadata:
+      labels:
+        {{- include "barakah-fund.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: user-service
+      annotations:
+        
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "barakah-fund.fullname" . }}-app  
+      initContainers:
+        
+        - name: wait-for-postgres
+          image: postgres:13-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "barakah-fund.fullname" . }}-postgresql -p 5432 -U postgres; do
+                echo "Waiting for PostgreSQL to be ready..."
+                sleep 5
+              done
+              echo "PostgreSQL is ready!"
+              
+              
+              until PGPASSWORD=barakah_user_password psql -h {{ include "barakah-fund.fullname" . }}-postgresql -p 5432 -U barakah_users_user -d barakah_users -c "SELECT 1" > /dev/null 2>&1; do
+                echo "Waiting for barakah_users database and user to be ready..."
+                sleep 5
+              done
+              echo "User database is ready!"
+        
+        
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -h {{ include "barakah-fund.fullname" . }}-redis -p 6379 ping | grep -q PONG; do
+                echo "Waiting for Redis to be ready..."
+                sleep 5
+              done
+              echo "Redis is ready!"
+        
+        
+        - name: wait-for-keycloak
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Keycloak port to be available..."
+              until nc -z barakah-fund-dev-keycloak 8080; do
+                echo "Keycloak port 8080 not ready, waiting..."
+                sleep 10
+              done
+              echo "Keycloak port is ready!"
+              
+              
+              echo "Waiting additional 30 seconds for Keycloak to fully initialize..."
+              sleep 30
+              echo "Keycloak should be ready now!"
+
+      containers:
+        - name: user-service
+          image: {{ .Values.userService.image.repository }}:{{ .Values.userService.image.tag }}
+          imagePullPolicy: {{ .Values.userService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+            - name: grpc
+              containerPort: 9091
+              protocol: TCP
+            - name: management
+              containerPort: 8080
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.userService.env }}
+            - name: {{ $key }}
+              value: {{ tpl $value $ | quote }}
+            {{- end }}
+          
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+            successThreshold: 1
+          
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+          
+          resources:
+            {{- toYaml .Values.userService.resources | nindent 12 }}
+{{- end }}
