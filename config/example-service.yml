@@ -39,7 +39,7 @@ spring:
                 order_updates: true
                 # Fix decimal precision for money fields
                 type:
-                    preferred_numeric_types: 
+                    preferred_numeric_types:
                         decimal: decimal(19,2)
         show-sql: ${JPA_SHOW_SQL:false}
         open-in-view: false
@@ -56,7 +56,7 @@ spring:
 
     cache:
         type: ${CACHE_TYPE:redis}
-        
+
     redis:
         host: ${REDIS_HOST:localhost}
         port: ${REDIS_PORT:6379}
@@ -265,7 +265,6 @@ features:
     event-publishing: ${FEATURE_EVENTS:true}
     balance-tracking: ${FEATURE_BALANCE_TRACKING:true}
 
-# Circuit breaker configuration
 resilience4j:
     circuitbreaker:
         instances:

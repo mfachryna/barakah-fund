@@ -45,13 +45,21 @@ spring:
 
     transaction:
         default-timeout: 30
+
     cache:
-        type: simple
+        type: redis
+        redis:
+            time-to-live: 300000
+            cache-null-values: false
+            key-prefix: "txn:"
+
     redis:
         host: localhost
         port: 6379
-        timeout: 2000ms
+        timeout: 2000
         database: 0
+    main:
+        allow-bean-definition-overriding: true
 
 server:
     port: 8083
@@ -169,8 +177,8 @@ kafka:
         acks: all
         retries: 3
         properties:
-        enable.idempotence: true
-        max.in.flight.requests.per.connection: 1
+            enable.idempotence: true
+            max.in.flight.requests.per.connection: 1
     consumer:
         group-id: transaction-service
         key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -219,28 +227,81 @@ resilience4j:
     circuitbreaker:
         instances:
             account-service:
-                registerHealthIndicator: true
-                slidingWindowSize: 10
-                minimumNumberOfCalls: 5
-                failureRateThreshold: 50
-                waitDurationInOpenState: 30s
-                permittedNumberOfCallsInHalfOpenState: 3
-                recordExceptions:
-                    - io.grpc.StatusRuntimeException
-                    - java.util.concurrent.TimeoutException
-                ignoreExceptions:
-                    - com.barakah.transaction.exception.TransactionNotFoundException
+                register-health-indicator: true
+                minimum-number-of-calls: 5
+                failure-rate-threshold: 50
+                wait-duration-in-open-state: 30s
+                automatic-transition-from-open-to-half-open-enabled: true
+                sliding-window-size: 10
+                sliding-window-type: count_based
+                permitted-number-of-calls-in-half-openState: 3
+                record-failure-predicate: com.barakah.shared.config.ServiceFailurePredicate
     retry:
         instances:
             account-service:
-                maxAttempts: 3
-                waitDuration: 2s
-                exponentialBackoffMultiplier: 2
-                retryExceptions:
-                    - io.grpc.StatusRuntimeException
-                    - java.util.concurrent.TimeoutException
-                ignoreExceptions:
-                    - com.barakah.transaction.exception.TransactionNotFoundException
+                max-attempts: 3
+                wait-duration: 2s
+                exponential-backoff-multiplier: 2
+                # retry-on-result-predicate: com.barakah.shared.config.ServiceRetryPredicate
+                retry-exception-predicate: com.barakah.shared.config.ServiceRetryPredicate
+
+    ratelimiter:
+        instances:
+            transaction-creation:
+                limit-for-period: 20
+                limit-refresh-period: 60s
+                timeout-duration: 2s
+            process-transaction:
+                limit-for-period: 30
+                limit-refresh-period: 60s
+                timeout-duration: 1s
+            query-transaction:
+                limit-for-period: 100
+                limit-refresh-period: 60s
+                timeout-duration: 500ms
+            transaction-queries:
+                limit-for-period: 500
+                limit-refresh-period: 60s
+                timeout-duration: 500ms
+            list-transactions:
+                limit-for-period: 50
+                limit-refresh-period: 60s
+                timeout-duration: 1s
+            account-service-calls:
+                limit-for-period: 200
+                limit-refresh-period: 60s
+                timeout-duration: 1s
+
+    bulkhead:
+        instances:
+            transaction-creation:
+                max-concurrent-calls: 30
+                max-wait-duration: 2s
+            transaction-processing:
+                max-concurrent-calls: 20
+                max-wait-duration: 1s
+            transaction-queries:
+                max-concurrent-calls: 100
+                max-wait-duration: 500ms
+
+rate-limit:
+    enabled: true
+    global:
+        requests-per-minute: 2000
+    per-user:
+        requests-per-minute: 200
+    per-endpoint:
+        grpc-create-transaction: 30
+        create-transaction: 30
+
+        grpc-get-transaction: 200
+        grpc-list-transactions: 100
+        grpc-get-account-transactions: 100
+        grpc-get-transaction-logs: 50
+
+        grpc-update-transaction: 50
+        update-transaction: 50
+        process-transaction: 100
 
 features:
     email-verification: false

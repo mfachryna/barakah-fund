@@ -1,0 +1,649 @@
+{
+    "id": null,
+    "title": "Gateway Service Dashboard",
+    "tags": ["gateway-service", "barakah-fund", "api-gateway"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 0,
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 0,
+    "panels": [
+        {
+            "id": 1,
+            "title": "Gateway Service Health",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "up{job=\"gateway-service\"}",
+                    "legendFormat": "Gateway Status",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": {
+                                    "text": "DOWN",
+                                    "color": "red"
+                                },
+                                "1": {
+                                    "text": "UP",
+                                    "color": "green"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": 0
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "none"
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                },
+                "orientation": "auto",
+                "textMode": "auto",
+                "colorMode": "background"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "id": 2,
+            "title": "Total Requests/sec",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_seconds_count{service=\"gateway-service\"}[5m]))",
+                    "legendFormat": "Requests/sec",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "unit": "reqps"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 6,
+                "y": 0
+            }
+        },
+        {
+            "id": 3,
+            "title": "Average Response Time",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"gateway-service\"}[5m])) by (le))",
+                    "legendFormat": "95th Percentile",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.5
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "unit": "s"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 12,
+                "y": 0
+            }
+        },
+        {
+            "id": 4,
+            "title": "Error Rate",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_seconds_count{service=\"gateway-service\",status=~\"4..|5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{service=\"gateway-service\"}[5m])) * 100",
+                    "legendFormat": "Error Rate %",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 1
+                            },
+                            {
+                                "color": "red",
+                                "value": 5
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 18,
+                "y": 0
+            }
+        },
+        {
+            "id": 5,
+            "title": "Request Rate by Endpoint",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_seconds_count{service=\"gateway-service\"}[5m])) by (uri)",
+                    "legendFormat": "{{uri}}",
+                    "refId": "A"
+                }
+            ],
+            "xAxes": [
+                {
+                    "mode": "time",
+                    "name": null,
+                    "show": true,
+                    "values": []
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 8
+            }
+        },
+        {
+            "id": 6,
+            "title": "Response Time by Endpoint",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"gateway-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 95th",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{service=\"gateway-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 50th",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Response Time (s)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 8
+            }
+        },
+        {
+            "id": 7,
+            "title": "HTTP Status Codes",
+            "type": "piechart",
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_seconds_count{service=\"gateway-service\"}[5m])) by (status)",
+                    "legendFormat": "{{status}}",
+                    "refId": "A"
+                }
+            ],
+            "options": {
+                "pieType": "pie",
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 17
+            }
+        },
+        {
+            "id": 8,
+            "title": "Rate Limiter Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_ratelimiter_available_permissions{service=\"gateway-service\"}",
+                    "legendFormat": "{{name}} - Available",
+                    "refId": "A",
+                    "format": "table"
+                },
+                {
+                    "expr": "resilience4j_ratelimiter_calls_total{service=\"gateway-service\"}",
+                    "legendFormat": "{{name}} - {{kind}}",
+                    "refId": "B",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 17
+            }
+        },
+        {
+            "id": 9,
+            "title": "Circuit Breaker Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_circuitbreaker_state{service=\"gateway-service\"}",
+                    "legendFormat": "{{name}} - {{state}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 17
+            }
+        },
+        {
+            "id": 10,
+            "title": "JVM Memory Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "jvm_memory_used_bytes{service=\"gateway-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Used (MB)",
+                    "refId": "A"
+                },
+                {
+                    "expr": "jvm_memory_max_bytes{service=\"gateway-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Max (MB)",
+                    "refId": "B"
+                },
+                {
+                    "expr": "jvm_memory_used_bytes{service=\"gateway-service\",area=\"nonheap\"} / 1024 / 1024",
+                    "legendFormat": "Non-Heap Used (MB)",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Memory (MB)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 26
+            }
+        },
+        {
+            "id": 11,
+            "title": "Garbage Collection",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(jvm_gc_collection_seconds_sum{service=\"gateway-service\"}[5m])",
+                    "legendFormat": "{{gc}} - Time",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(jvm_gc_collection_seconds_count{service=\"gateway-service\"}[5m])",
+                    "legendFormat": "{{gc}} - Count",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "GC Time/Count",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 26
+            }
+        },
+        {
+            "id": 12,
+            "title": "Cache Performance",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(cache_gets_total{service=\"gateway-service\",result=\"hit\"}[5m])",
+                    "legendFormat": "{{cache}} - Hits/sec",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(cache_gets_total{service=\"gateway-service\",result=\"miss\"}[5m])",
+                    "legendFormat": "{{cache}} - Misses/sec",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(cache_evictions_total{service=\"gateway-service\"}[5m])",
+                    "legendFormat": "{{cache}} - Evictions/sec",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Operations/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 35
+            }
+        },
+        {
+            "id": 13,
+            "title": "Cache Hit Rate",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "rate(cache_gets_total{service=\"gateway-service\",result=\"hit\"}[5m]) / rate(cache_gets_total{service=\"gateway-service\"}[5m]) * 100",
+                    "legendFormat": "{{cache}} Hit Rate",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 50
+                            },
+                            {
+                                "color": "green",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 35
+            }
+        },
+        {
+            "id": 14,
+            "title": "gRPC Client Requests",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(grpc_client_requests_total{service=\"gateway-service\"}[5m])) by (grpc_service, grpc_method)",
+                    "legendFormat": "{{grpc_service}}.{{grpc_method}}",
+                    "refId": "A"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 44
+            }
+        },
+        {
+            "id": 15,
+            "title": "gRPC Client Response Times",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(grpc_client_request_duration_seconds_bucket{service=\"gateway-service\"}[5m])) by (grpc_service, grpc_method, le))",
+                    "legendFormat": "{{grpc_service}}.{{grpc_method}} - 95th",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.50, sum(rate(grpc_client_request_duration_seconds_bucket{service=\"gateway-service\"}[5m])) by (grpc_service, grpc_method, le))",
+                    "legendFormat": "{{grpc_service}}.{{grpc_method}} - 50th",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Response Time (s)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 44
+            }
+        },
+        {
+            "id": 16,
+            "title": "Bulkhead Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "resilience4j_bulkhead_available_concurrent_calls{service=\"gateway-service\"}",
+                    "legendFormat": "{{name}} - Available",
+                    "refId": "A"
+                },
+                {
+                    "expr": "resilience4j_bulkhead_max_allowed_concurrent_calls{service=\"gateway-service\"}",
+                    "legendFormat": "{{name}} - Max",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Concurrent Calls",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 53
+            }
+        },
+        {
+            "id": 17,
+            "title": "Custom Rate Limiting",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "rate_limit_requests_total{service=\"gateway-service\"}",
+                    "legendFormat": "{{endpoint}} - {{result}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 53
+            }
+        },
+        {
+            "id": 18,
+            "title": "Top Endpoints by Traffic",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "topk(10, sum(rate(http_server_requests_seconds_count{service=\"gateway-service\"}[5m])) by (uri))",
+                    "legendFormat": "{{uri}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 62
+            }
+        },
+        {
+            "id": 19,
+            "title": "Slowest Endpoints",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "topk(10, histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"gateway-service\"}[5m])) by (uri, le)))",
+                    "legendFormat": "{{uri}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 62
+            }
+        }
+    ]
+}

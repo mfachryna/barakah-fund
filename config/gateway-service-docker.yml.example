@@ -1,0 +1,28 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: gateway-service
+
+grpc:
+  client:
+    user-service:
+      address: ${USER_SERVICE_HOST:user-service}:${USER_SERVICE_GRPC_PORT:9091}
+    account-service:
+      address: ${ACCOUNT_SERVICE_HOST:account-service}:${ACCOUNT_SERVICE_GRPC_PORT:9092}
+    transaction-service:
+      address: ${TRANSACTION_SERVICE_HOST:transaction-service}:${TRANSACTION_SERVICE_GRPC_PORT:9093}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:eureka-server}:${EUREKA_PORT:8761}/eureka/
+  instance:
+    hostname: ${HOSTNAME:gateway-service}
+
+logging:
+  level:
+    com.barakah: ${LOG_LEVEL_APP:INFO}
+  file:
+    name: ${LOG_FILE:/app/logs/gateway-service.log}

@@ -1,0 +1,350 @@
+server:
+    port: ${SERVER_PORT:8070}
+
+spring:
+    application:
+        name: gateway-service
+
+    gateway:
+        discovery:
+            enabled: false
+            locator:
+                enabled: false
+                lower-case-service-id: true
+
+
+    redis:
+        host: localhost
+        port: 6379
+        database: 0  
+        timeout: 2000ms
+        lettuce:
+        pool:
+            max-active: 10
+            max-idle: 8
+            min-idle: 2
+            max-wait: -1ms
+    cache:
+    type: redis
+    cache-names:
+      - gateway-token-validation
+      - gateway-users
+      - gateway-current-user
+      - gateway-user-lists
+      - gateway-grpc-current-user
+      - gateway-grpc-users
+      - gateway-accounts
+      - gateway-user-accounts
+      - gateway-balances
+      - gateway-grpc-accounts
+      - gateway-grpc-account-lists
+      - gateway-grpc-balances
+      - gateway-transactions
+      - gateway-account-transactions
+      - gateway-user-transactions
+      - gateway-categories
+      - gateway-category-lists
+      - gateway-grpc-transactions
+      - gateway-grpc-transaction-lists
+      - gateway-grpc-account-transactions
+      - gateway-grpc-transaction-logs
+      - gateway-grpc-categories
+      - gateway-grpc-category-lists
+    redis:
+      time-to-live: 120000
+
+grpc:
+    server:
+        port: ${GRPC_PORT:9090}
+        enable-reflection: true
+        max-inbound-message-size: 4MB
+        max-outbound-message-size: 4MB
+    client:
+        user-service:
+            address: static://localhost:9091
+            negotiationType: plaintext
+            keepAliveTime: 30s
+            keepAliveTimeout: 5s
+            keepAliveWithoutCalls: true
+            maxRetryAttempts: 3
+        account-service:
+            address: static://localhost:9092
+            negotiationType: plaintext
+            keepAliveTime: 30s
+            keepAliveTimeout: 5s
+            keepAliveWithoutCalls: true
+            maxRetryAttempts: 3
+        transaction-service:
+            address: static://localhost:9093
+            negotiationType: plaintext
+            keepAliveTime: 30s
+            keepAliveTimeout: 5s
+            keepAliveWithoutCalls: true
+            maxRetryAttempts: 3
+
+keycloak:
+    auth-server-url: ${vault:secret/data/keycloak#auth-server-url:http://keycloak:8080}
+    realm: ${vault:secret/data/keycloak#realm:barakah}
+    resource: ${vault:secret/data/keycloak#resource:user-service}
+    credentials:
+        secret: ${vault:secret/data/keycloak#client-secret:user-service-secret-change-me}
+    admin:
+        username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+        password: ${KEYCLOAK_ADMIN_PASSWORD:admin123}
+        client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+    mock:
+        enabled: ${KEYCLOAK_MOCK_ENABLED:true}
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://${vault:secret/data/eureka#username:eureka-user}:${vault:secret/data/eureka#password:eureka-pass}@${EUREKA_HOST:eureka-server}:${EUREKA_PORT:8761}/eureka/
+        eureka-server-connect-timeout-seconds: 5
+        eureka-server-read-timeout-seconds: 8
+        registry-fetch-interval-seconds: 30
+        register-with-eureka: true
+        fetch-registry: true
+        healthcheck:
+            enabled: true
+    instance:
+        prefer-ip-address: true
+        hostname: ${HOSTNAME:localhost}
+        instance-id: ${spring.application.name}:${random.value}
+        lease-renewal-interval-in-seconds: 30
+        lease-expiration-duration-in-seconds: 90
+        metadata-map:
+            grpc.port: 9090
+            grpc.enabled: true
+            management.context-path: /actuator
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 10
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 20
+        sliding-window-type: COUNT_BASED
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-failure-predicate: com.barakah.shared.config.ServiceFailurePredicate
+    instances:
+      auth-service:
+        base-config: default
+        failure-rate-threshold: 60  
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+      user-service:
+        base-config: default
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+      account-service:
+        base-config: default
+        failure-rate-threshold: 40  
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 45s
+      transaction-service:
+        base-config: default
+        failure-rate-threshold: 40  
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 45s
+  
+  
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        exponential-backoff-multiplier: 2
+        retry-exception-predicate: com.barakah.shared.config.ServiceRetryPredicate 
+        # retry-on-result-predicate: com.barakah.shared.config.ServiceRetryPredicate
+    instances:
+      auth-service:
+        base-config: default
+        max-attempts: 2  
+        wait-duration: 1s
+      user-service:
+        base-config: default
+        max-attempts: 3
+        wait-duration: 500ms
+      account-service:
+        base-config: default
+        max-attempts: 3
+        wait-duration: 200ms  
+      transaction-service:
+        base-config: default
+        max-attempts: 3
+        wait-duration: 200ms 
+  
+  
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: 100
+        limit-refresh-period: 60s
+        timeout-duration: 1s
+    instances:
+      
+      gateway-auth:
+        limit-for-period: 100        
+        limit-refresh-period: 60s
+        timeout-duration: 2s
+      gateway-auth-validation:
+        limit-for-period: 1000       
+        limit-refresh-period: 60s
+        timeout-duration: 500ms
+      
+      
+      gateway-user-queries:
+        limit-for-period: 500        
+        limit-refresh-period: 60s
+        timeout-duration: 1s
+      gateway-user-mutations:
+        limit-for-period: 50         
+        limit-refresh-period: 60s
+        timeout-duration: 2s
+      
+      
+      gateway-account-queries:
+        limit-for-period: 800        
+        limit-refresh-period: 60s
+        timeout-duration: 1s
+      gateway-account-mutations:
+        limit-for-period: 100        
+        limit-refresh-period: 60s
+        timeout-duration: 2s
+      
+      
+      gateway-transaction-queries:
+        limit-for-period: 1000       
+        limit-refresh-period: 60s
+        timeout-duration: 1s
+      gateway-transaction-mutations:
+        limit-for-period: 200        
+        limit-refresh-period: 60s
+        timeout-duration: 3s
+  
+  
+  bulkhead:
+    configs:
+      default:
+        max-concurrent-calls: 10
+        max-wait-duration: 1s
+    instances:
+      gateway-authentication:
+        max-concurrent-calls: 20     
+        max-wait-duration: 3s
+      gateway-user-creation:
+        max-concurrent-calls: 5      
+        max-wait-duration: 3s
+      gateway-user-mutations:
+        max-concurrent-calls: 10     
+        max-wait-duration: 2s
+      gateway-account-creation:
+        max-concurrent-calls: 10     
+        max-wait-duration: 2s
+      gateway-transaction-creation:
+        max-concurrent-calls: 15     
+        max-wait-duration: 2s
+
+
+rate-limit:
+  enabled: true
+  per-endpoint:
+    
+    gateway-grpc-login: 20
+    gateway-grpc-register: 10
+    gateway-grpc-validate-token: 1000    
+    gateway-grpc-refresh-token: 50
+    gateway-grpc-logout: 100
+    
+    
+    gateway-get-current-user: 500        
+    gateway-get-user-by-id: 200
+    gateway-list-users: 100
+    gateway-create-user: 10
+    gateway-update-user: 20
+    gateway-delete-user: 5
+    gateway-grpc-get-current-user: 500
+    gateway-grpc-get-user: 200
+    
+    
+    gateway-list-accounts: 200
+    gateway-get-account: 300
+    gateway-create-account: 10
+    gateway-get-balance: 500             
+    gateway-credit-account: 50
+    gateway-debit-account: 50
+    gateway-grpc-create-account: 10
+    gateway-grpc-get-account: 300
+    gateway-grpc-list-accounts: 200
+    gateway-grpc-get-balance: 500
+    
+    
+    gateway-create-transaction: 50
+    gateway-get-transaction: 300
+    gateway-list-transactions: 200
+    gateway-get-account-transactions: 200
+    gateway-get-category: 300
+    gateway-list-categories: 200
+    gateway-grpc-create-transaction: 50
+    gateway-grpc-get-transaction: 300
+    gateway-grpc-list-transactions: 200
+    gateway-grpc-get-transactions-by-account: 200
+    gateway-grpc-get-transaction-logs: 100
+    gateway-grpc-get-category: 300
+    gateway-grpc-list-categories: 200
+
+logging:
+  level:
+    com.barakah: DEBUG
+    org.springframework.cache: DEBUG
+    io.github.resilience4j: DEBUG
+    net.devh.boot.grpc: DEBUG
+    org.springframework.web.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/gateway-service-dev.log
+
+features:
+  rate-limiting: true
+  cache-enabled: true
+  circuit-breaker-enabled: true
+  retry-enabled: true
+  bulkhead-enabled: true
+  metrics-enabled: true
+  tracing-enabled: false
+
+app:
+  gateway:
+    timeout:
+      auth: 5s
+      user: 5s
+      account: 10s
+      transaction: 15s
+    cache:
+      default-ttl: 120s
+      auth-ttl: 300s       
+      user-ttl: 300s       
+      account-ttl: 120s    
+      transaction-ttl: 60s 
+    pagination:
+      default-size: 20
+      max-size: 100

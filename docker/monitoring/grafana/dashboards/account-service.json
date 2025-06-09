@@ -1,0 +1,730 @@
+{
+    "id": null,
+    "title": "Account Service Dashboard",
+    "tags": ["account-service", "barakah-fund", "banking"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 0,
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 0,
+    "panels": [
+        {
+            "id": 1,
+            "title": "Account Service Health",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "up{job=\"account-service\"}",
+                    "legendFormat": "Service Status",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": {
+                                    "text": "DOWN",
+                                    "color": "red"
+                                },
+                                "1": {
+                                    "text": "UP",
+                                    "color": "green"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": 0
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "id": 2,
+            "title": "Account Creation Rate",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(account_creation_total[5m]) * 60",
+                    "legendFormat": "Accounts Created/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(account_creation_total{status=\"success\"}[5m]) * 60",
+                    "legendFormat": "Successful/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(account_creation_total{status=\"failed\"}[5m]) * 60",
+                    "legendFormat": "Failed/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Accounts/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 6,
+                "y": 0
+            }
+        },
+        {
+            "id": 3,
+            "title": "Total Account Balance",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(account_balance_total)",
+                    "legendFormat": "Total Balance",
+                    "refId": "A"
+                },
+                {
+                    "expr": "avg(account_balance_total)",
+                    "legendFormat": "Average Balance",
+                    "refId": "B"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "currencyUSD"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 15,
+                "y": 0
+            }
+        },
+        {
+            "id": 4,
+            "title": "Account Types Distribution",
+            "type": "piechart",
+            "targets": [
+                {
+                    "expr": "sum(account_count_by_type) by (type)",
+                    "legendFormat": "{{type}}",
+                    "refId": "A"
+                }
+            ],
+            "options": {
+                "pieType": "pie",
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 8
+            }
+        },
+        {
+            "id": 5,
+            "title": "Account Status Distribution",
+            "type": "piechart",
+            "targets": [
+                {
+                    "expr": "sum(account_count_by_status) by (status)",
+                    "legendFormat": "{{status}}",
+                    "refId": "A"
+                }
+            ],
+            "options": {
+                "pieType": "pie",
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 8
+            }
+        },
+        {
+            "id": 6,
+            "title": "Balance Operations",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(account_balance_operations_total[5m]) * 60",
+                    "legendFormat": "Balance Operations/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(account_balance_operations_total{operation=\"credit\"}[5m]) * 60",
+                    "legendFormat": "Credits/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(account_balance_operations_total{operation=\"debit\"}[5m]) * 60",
+                    "legendFormat": "Debits/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Operations/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 8
+            }
+        },
+        {
+            "id": 7,
+            "title": "Account Verification Status",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "account_count_by_verification{status=\"verified\"}",
+                    "legendFormat": "Verified Accounts",
+                    "refId": "A"
+                },
+                {
+                    "expr": "account_count_by_verification{status=\"pending\"}",
+                    "legendFormat": "Pending Verification",
+                    "refId": "B"
+                },
+                {
+                    "expr": "account_count_by_verification{status=\"rejected\"}",
+                    "legendFormat": "Rejected",
+                    "refId": "C"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 17
+            }
+        },
+        {
+            "id": 8,
+            "title": "Account Balance Distribution",
+            "type": "heatmap",
+            "targets": [
+                {
+                    "expr": "rate(account_balance_bucket[5m])",
+                    "legendFormat": "{{le}}",
+                    "refId": "A"
+                }
+            ],
+            "heatmap": {
+                "xBucketSize": null,
+                "xBucketNumber": null,
+                "yBucketSize": null,
+                "yBucketNumber": null
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 17
+            }
+        },
+        {
+            "id": 9,
+            "title": "Response Times",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"account-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 95th",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{service=\"account-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 50th",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Response Time (s)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 17
+            }
+        },
+        {
+            "id": 10,
+            "title": "Daily Account Statistics",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(increase(account_creation_total[24h]))",
+                    "legendFormat": "New Accounts Today",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(increase(account_balance_operations_total[24h]))",
+                    "legendFormat": "Balance Operations Today",
+                    "refId": "B"
+                },
+                {
+                    "expr": "account_total_count",
+                    "legendFormat": "Total Accounts",
+                    "refId": "C"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 25
+            }
+        },
+        {
+            "id": 11,
+            "title": "Account Closure Requests",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(account_closure_requests_total[5m]) * 60",
+                    "legendFormat": "Closure Requests/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(account_closure_requests_total{status=\"approved\"}[5m]) * 60",
+                    "legendFormat": "Approved/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(account_closure_requests_total{status=\"rejected\"}[5m]) * 60",
+                    "legendFormat": "Rejected/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 25
+            }
+        },
+        {
+            "id": 12,
+            "title": "Account Limits and Restrictions",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "account_limits_exceeded_total",
+                    "legendFormat": "{{limit_type}} - {{account_type}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 25
+            }
+        },
+        {
+            "id": 13,
+            "title": "Database Connection Pool",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "hikaricp_connections_active{service=\"account-service\"}",
+                    "legendFormat": "Active Connections",
+                    "refId": "A"
+                },
+                {
+                    "expr": "hikaricp_connections_max{service=\"account-service\"}",
+                    "legendFormat": "Max Connections",
+                    "refId": "B"
+                },
+                {
+                    "expr": "hikaricp_connections_pending{service=\"account-service\"}",
+                    "legendFormat": "Pending Connections",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Connections",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 34
+            }
+        },
+        {
+            "id": 14,
+            "title": "JVM Memory Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "jvm_memory_used_bytes{service=\"account-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Used (MB)",
+                    "refId": "A"
+                },
+                {
+                    "expr": "jvm_memory_max_bytes{service=\"account-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Max (MB)",
+                    "refId": "B"
+                },
+                {
+                    "expr": "jvm_memory_used_bytes{service=\"account-service\",area=\"nonheap\"} / 1024 / 1024",
+                    "legendFormat": "Non-Heap Used (MB)",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Memory (MB)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 34
+            }
+        },
+        {
+            "id": 15,
+            "title": "Cache Performance",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(cache_gets_total{service=\"account-service\",result=\"hit\"}[5m])",
+                    "legendFormat": "{{cache}} - Hits/sec",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(cache_gets_total{service=\"account-service\",result=\"miss\"}[5m])",
+                    "legendFormat": "{{cache}} - Misses/sec",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(cache_evictions_total{service=\"account-service\"}[5m])",
+                    "legendFormat": "{{cache}} - Evictions/sec",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Operations/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 34
+            }
+        },
+        {
+            "id": 16,
+            "title": "Account KYC Status",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "account_kyc_status{status=\"completed\"}",
+                    "legendFormat": "KYC Completed",
+                    "refId": "A"
+                },
+                {
+                    "expr": "account_kyc_status{status=\"pending\"}",
+                    "legendFormat": "KYC Pending",
+                    "refId": "B"
+                },
+                {
+                    "expr": "account_kyc_status{status=\"failed\"}",
+                    "legendFormat": "KYC Failed",
+                    "refId": "C"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 43
+            }
+        },
+        {
+            "id": 17,
+            "title": "gRPC Server Metrics",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(grpc_server_requests_total{service=\"account-service\"}[5m])) by (grpc_method)",
+                    "legendFormat": "{{grpc_method}}",
+                    "refId": "A"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 43
+            }
+        },
+        {
+            "id": 18,
+            "title": "Circuit Breaker Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_circuitbreaker_state{service=\"account-service\"}",
+                    "legendFormat": "{{name}} - {{state}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 43
+            }
+        },
+        {
+            "id": 19,
+            "title": "Account Risk Assessment",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(account_risk_assessment_total[5m]) * 60",
+                    "legendFormat": "Risk Assessments/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(rate(account_risk_assessment_total[5m])) by (risk_level) * 60",
+                    "legendFormat": "{{risk_level}}/min",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Assessments/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 51
+            }
+        },
+        {
+            "id": 20,
+            "title": "Account Transaction Limits",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "account_transaction_limits",
+                    "legendFormat": "{{account_type}} - {{limit_type}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 51
+            }
+        },
+        {
+            "id": 21,
+            "title": "Account Freeze/Unfreeze Operations",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(account_freeze_operations_total[5m]) * 60",
+                    "legendFormat": "Freeze Operations/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(account_freeze_operations_total{operation=\"freeze\"}[5m]) * 60",
+                    "legendFormat": "Accounts Frozen/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(account_freeze_operations_total{operation=\"unfreeze\"}[5m]) * 60",
+                    "legendFormat": "Accounts Unfrozen/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Operations/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 60
+            }
+        },
+        {
+            "id": 22,
+            "title": "Account Interest Calculations",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(account_interest_calculations_total[5m]) * 60",
+                    "legendFormat": "Interest Calculations/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(account_interest_earned_total)",
+                    "legendFormat": "Total Interest Earned",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Calculations/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 60
+            }
+        }
+    ]
+}

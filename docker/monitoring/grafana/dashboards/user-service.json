@@ -1,0 +1,695 @@
+{
+    "id": null,
+    "title": "User Service Dashboard",
+    "tags": ["user-service", "barakah-fund", "authentication"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 0,
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 0,
+    "panels": [
+        {
+            "id": 1,
+            "title": "User Service Health",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "up{job=\"user-service\"}",
+                    "legendFormat": "Health Status",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": {
+                                    "text": "DOWN",
+                                    "color": "red"
+                                },
+                                "1": {
+                                    "text": "UP",
+                                    "color": "green"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": 0
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "id": 2,
+            "title": "User Registration Rate",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(user_creation_total[5m]) * 60",
+                    "legendFormat": "Registrations/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(user_creation_total{status=\"success\"}[5m]) * 60",
+                    "legendFormat": "Successful/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(user_creation_total{status=\"failed\"}[5m]) * 60",
+                    "legendFormat": "Failed/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Registrations/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 6,
+                "y": 0
+            }
+        },
+        {
+            "id": 3,
+            "title": "Authentication Requests",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(http_server_requests_seconds_count{service=\"user-service\", uri=~\"/api/v1/auth.*\"}[5m])",
+                    "legendFormat": "{{method}} {{uri}}",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(authentication_attempts_total[5m])",
+                    "legendFormat": "Login Attempts/sec",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(authentication_attempts_total{result=\"success\"}[5m])",
+                    "legendFormat": "Successful Logins/sec",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 15,
+                "y": 0
+            }
+        },
+        {
+            "id": 4,
+            "title": "Cache Hit Rate",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(cache_gets_total{result=\"hit\", cache=\"users\", service=\"user-service\"}[5m]) / rate(cache_gets_total{cache=\"users\", service=\"user-service\"}[5m]) * 100",
+                    "legendFormat": "Users Cache Hit Rate %",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(cache_gets_total{result=\"hit\", cache=\"user-profiles\", service=\"user-service\"}[5m]) / rate(cache_gets_total{cache=\"user-profiles\", service=\"user-service\"}[5m]) * 100",
+                    "legendFormat": "Profiles Cache Hit Rate %",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Hit Rate %",
+                    "logBase": 1,
+                    "max": "100",
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 8
+            }
+        },
+        {
+            "id": 5,
+            "title": "Active Users",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "user_active_count",
+                    "legendFormat": "Active Users",
+                    "refId": "A"
+                },
+                {
+                    "expr": "user_online_count",
+                    "legendFormat": "Online Users",
+                    "refId": "B"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 8
+            }
+        },
+        {
+            "id": 6,
+            "title": "Response Times",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"user-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 95th",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{service=\"user-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 50th",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Response Time (s)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 8
+            }
+        },
+        {
+            "id": 7,
+            "title": "User Authentication Success Rate",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "rate(authentication_attempts_total{result=\"success\"}[5m]) / rate(authentication_attempts_total[5m]) * 100",
+                    "legendFormat": "Auth Success Rate %",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 80
+                            },
+                            {
+                                "color": "green",
+                                "value": 95
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 0,
+                "y": 17
+            }
+        },
+        {
+            "id": 8,
+            "title": "Password Reset Requests",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(password_reset_requests_total[5m]) * 60",
+                    "legendFormat": "Reset Requests/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(password_reset_requests_total{status=\"success\"}[5m]) * 60",
+                    "legendFormat": "Successful Resets/min",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 6,
+                "y": 17
+            }
+        },
+        {
+            "id": 9,
+            "title": "User Profile Updates",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(user_profile_updates_total[5m]) * 60",
+                    "legendFormat": "Profile Updates/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(user_profile_updates_total{field=\"email\"}[5m]) * 60",
+                    "legendFormat": "Email Updates/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(user_profile_updates_total{field=\"phone\"}[5m]) * 60",
+                    "legendFormat": "Phone Updates/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Updates/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 15,
+                "y": 17
+            }
+        },
+        {
+            "id": 10,
+            "title": "Database Connection Pool",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "hikaricp_connections_active{service=\"user-service\"}",
+                    "legendFormat": "Active Connections",
+                    "refId": "A"
+                },
+                {
+                    "expr": "hikaricp_connections_max{service=\"user-service\"}",
+                    "legendFormat": "Max Connections",
+                    "refId": "B"
+                },
+                {
+                    "expr": "hikaricp_connections_pending{service=\"user-service\"}",
+                    "legendFormat": "Pending Connections",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Connections",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 25
+            }
+        },
+        {
+            "id": 11,
+            "title": "JVM Memory Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "jvm_memory_used_bytes{service=\"user-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Used (MB)",
+                    "refId": "A"
+                },
+                {
+                    "expr": "jvm_memory_max_bytes{service=\"user-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Max (MB)",
+                    "refId": "B"
+                },
+                {
+                    "expr": "jvm_memory_used_bytes{service=\"user-service\",area=\"nonheap\"} / 1024 / 1024",
+                    "legendFormat": "Non-Heap Used (MB)",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Memory (MB)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 25
+            }
+        },
+        {
+            "id": 12,
+            "title": "Session Management",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "user_sessions_active",
+                    "legendFormat": "Active Sessions",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(user_sessions_created_total[5m]) * 60",
+                    "legendFormat": "Sessions Created/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(user_sessions_expired_total[5m]) * 60",
+                    "legendFormat": "Sessions Expired/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Sessions",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 25
+            }
+        },
+        {
+            "id": 13,
+            "title": "User Registration by Source",
+            "type": "piechart",
+            "targets": [
+                {
+                    "expr": "sum(rate(user_creation_total[5m])) by (source)",
+                    "legendFormat": "{{source}}",
+                    "refId": "A"
+                }
+            ],
+            "options": {
+                "pieType": "pie",
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 34
+            }
+        },
+        {
+            "id": 14,
+            "title": "Failed Login Attempts",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(authentication_attempts_total{result=\"failed\"}[5m]) * 60",
+                    "legendFormat": "Failed Logins/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(authentication_attempts_total{result=\"blocked\"}[5m]) * 60",
+                    "legendFormat": "Blocked Attempts/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(authentication_attempts_total{result=\"locked\"}[5m]) * 60",
+                    "legendFormat": "Account Locked/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Attempts/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 34
+            }
+        },
+        {
+            "id": 15,
+            "title": "User Account Status",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "user_count_by_status{status=\"active\"}",
+                    "legendFormat": "Active Users",
+                    "refId": "A"
+                },
+                {
+                    "expr": "user_count_by_status{status=\"suspended\"}",
+                    "legendFormat": "Suspended Users",
+                    "refId": "B"
+                },
+                {
+                    "expr": "user_count_by_status{status=\"pending\"}",
+                    "legendFormat": "Pending Verification",
+                    "refId": "C"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 34
+            }
+        },
+        {
+            "id": 16,
+            "title": "gRPC Server Metrics",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(grpc_server_requests_total{service=\"user-service\"}[5m])) by (grpc_method)",
+                    "legendFormat": "{{grpc_method}}",
+                    "refId": "A"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 43
+            }
+        },
+        {
+            "id": 17,
+            "title": "Circuit Breaker Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_circuitbreaker_state{service=\"user-service\"}",
+                    "legendFormat": "{{name}} - {{state}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 43
+            }
+        },
+        {
+            "id": 18,
+            "title": "Email Verification",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(email_verification_sent_total[5m]) * 60",
+                    "legendFormat": "Verification Emails Sent/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(email_verification_confirmed_total[5m]) * 60",
+                    "legendFormat": "Verifications Confirmed/min",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Emails/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 52
+            }
+        },
+        {
+            "id": 19,
+            "title": "Rate Limiter Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_ratelimiter_available_permissions{service=\"user-service\"}",
+                    "legendFormat": "{{name}} - Available",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 52
+            }
+        },
+        {
+            "id": 20,
+            "title": "User Growth Metrics",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(increase(user_creation_total[24h]))",
+                    "legendFormat": "New Users Today",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(increase(user_creation_total[168h]))",
+                    "legendFormat": "New Users This Week",
+                    "refId": "B"
+                },
+                {
+                    "expr": "user_total_count",
+                    "legendFormat": "Total Users",
+                    "refId": "C"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 52
+            }
+        }
+    ]
+}

@@ -2,7 +2,6 @@ version: "3.8"
 name: barakah-fund-dev
 
 services:
-
     postgres:
         image: postgres:15-alpine
         container_name: barakah-postgres
@@ -48,15 +47,15 @@ services:
         image: bitnami/kafka:latest
         container_name: barakah-kafka
         ports:
-            - "9192:9192"
-            - "9193:9193"
+            - "9192:9092"
+            - "9193:9093"
         environment:
             KAFKA_ENABLE_KRAFT: yes
             KAFKA_CFG_PROCESS_ROLES: broker,controller
             KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
             KAFKA_CFG_LISTENERS: PLAINTEXT://:9192,CONTROLLER://:9193
             KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9192
+            KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9192
             KAFKA_CFG_BROKER_ID: 1
             KAFKA_CFG_NODE_ID: 1
             KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9193
@@ -70,7 +69,11 @@ services:
         networks:
             - barakah-network
         healthcheck:
-            test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9192 --list || exit 1"]
+            test:
+                [
+                    "CMD-SHELL",
+                    "kafka-topics.sh --bootstrap-server localhost:9192 --list || exit 1",
+                ]
             interval: 30s
             timeout: 10s
             retries: 3
@@ -100,11 +103,15 @@ services:
             postgres:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080'"]
+            test:
+                [
+                    "CMD-SHELL",
+                    "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/8080'",
+                ]
             interval: 30s
             timeout: 10s
             retries: 5
-            start_period: 90s 
+            start_period: 90s
         networks:
             - barakah-network
         restart: unless-stopped
@@ -120,7 +127,7 @@ services:
             - SPRING_PROFILES_ACTIVE=docker
             - SPRING_CLOUD_CONFIG_ENABLED=false
             - SPRING_CLOUD_CONFIG_FAIL_FAST=false
-            
+
             - SPRING_CLOUD_VAULT_HOST=vault
             - SPRING_CLOUD_VAULT_PORT=8200
             - SPRING_CLOUD_VAULT_SCHEME=http
@@ -145,7 +152,20 @@ services:
             - "8081:8081"
             - "9091:9091"
         environment:
-            - SPRING_PROFILES_ACTIVE=docker
+            - DB_HOST=postgres
+            - DB_NAME=barakah_users
+            - REDIS_HOST=redis
+            - REDIS_DATABASE=2
+            - EUREKA_HOST=eureka-server
+            - HOSTNAME=user-service
+            - USER_SERVICE_GRPC_ADDRESS=discovery:///account-service
+            - TRANSACTION_SERVICE_GRPC_ADDRESS=discovery:///transaction-service
+            - KEYCLOAK_URL=http://keycloak:8080
+            - KEYCLOAK_CLIENT_ID=user-service
+            - KEYCLOAK_CLIENT_SECRET=user-service-secret-production
+            - AUTH_SERVICE_URL=http://auth-service:8082
+            - TRANSACTION_SERVICE_URL=http://transaction-service:8083
+            - NOTIFICATION_SERVICE_URL=http://notification-service:8084
             - SPRING_CLOUD_CONFIG_ENABLED=false
             - SPRING_CLOUD_CONFIG_FAIL_FAST=false
             - VAULT_ENABLED=false
@@ -165,7 +185,13 @@ services:
             eureka-server:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:8081/user-service/actuator/health"]
+            test:
+                [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:8081/user-service/actuator/health",
+                ]
             interval: 30s
             timeout: 10s
             retries: 5
@@ -183,7 +209,15 @@ services:
             - "8082:8082"
             - "9092:9092"
         environment:
-            - SPRING_PROFILES_ACTIVE=docker
+            - DB_HOST=postgres
+            - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+            # - SPRING_PROFILES_ACTIVE=docker
+            - REDIS_HOST=redis
+            - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+            - EUREKA_INSTANCE_HOSTNAME=account-service
+            - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080
+            - USER_SERVICE_URL=http://user-service:8081/user-service
+            - NOTIFICATION_SERVICE_URL=http://notification-service:8084/notification-service
             - SPRING_CLOUD_CONFIG_ENABLED=false
             - SPRING_CLOUD_CONFIG_FAIL_FAST=false
             - VAULT_ENABLED=false
@@ -203,7 +237,13 @@ services:
             eureka-server:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:8082/account-service/actuator/health"]
+            test:
+                [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:8082/account-service/actuator/health",
+                ]
             interval: 30s
             timeout: 10s
             retries: 5
@@ -221,7 +261,17 @@ services:
             - "8083:8083"
             - "9093:9093"
         environment:
-            - SPRING_PROFILES_ACTIVE=docker
+            - DB_HOST=postgres
+            - DB_NAME=barakah_transactions
+            - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+            # - SPRING_PROFILES_ACTIVE=docker
+            - REDIS_HOST=redis
+            - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+            - EUREKA_INSTANCE_HOSTNAME=transaction-service
+            - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080
+            - USER_SERVICE_URL=http://user-service:8081/user-service
+            - ACCOUNT_SERVICE_URL=http://account-service:8082/account-service
+            - NOTIFICATION_SERVICE_URL=http://notification-service:8084/notification-service
             - SPRING_CLOUD_CONFIG_ENABLED=false
             - SPRING_CLOUD_CONFIG_FAIL_FAST=false
             - VAULT_ENABLED=false
@@ -241,7 +291,7 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
-            redis: 
+            redis:
                 condition: service_healthy
             keycloak:
                 condition: service_healthy
@@ -250,7 +300,13 @@ services:
             kafka:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:8083/transaction-service/actuator/health"]
+            test:
+                [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:8083/transaction-service/actuator/health",
+                ]
             interval: 30s
             timeout: 10s
             retries: 5
@@ -268,7 +324,16 @@ services:
             - "8070:8070"
             - "9090:9090"
         environment:
-            - SPRING_PROFILES_ACTIVE=docker
+            - REDIS_HOST=redis
+            - EUREKA_HOST=eureka-server
+            - HOSTNAME=gateway-service
+            - USER_SERVICE_GRPC_ADDRESS=static://user-service:9091
+            - ACCOUNT_SERVICE_GRPC_ADDRESS=static://account-service:9092
+            - TRANSACTION_SERVICE_GRPC_ADDRESS=static://transaction-service:9093
+            - KEYCLOAK_URL=http://keycloak:8080
+            - KEYCLOAK_CLIENT_ID=gateway-service
+            - KEYCLOAK_CLIENT_SECRET=gateway-service-secret-production
+            # - SPRING_PROFILES_ACTIVE=docker
             - SPRING_CLOUD_CONFIG_ENABLED=false
             - SPRING_CLOUD_CONFIG_FAIL_FAST=false
             - VAULT_ENABLED=false
@@ -308,10 +373,114 @@ services:
             kafka:
                 condition: service_healthy
         healthcheck:
-            test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:8080/actuator/health || exit 1",
+                ]
             interval: 10s
             timeout: 5s
             retries: 5
+            start_period: 30s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    prometheus:
+        image: prom/prometheus:v2.47.0
+        container_name: barakah-prometheus
+        ports:
+            - "9190:9090"
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.console.libraries=/etc/prometheus/console_libraries"
+            - "--web.console.templates=/etc/prometheus/consoles"
+            - "--storage.tsdb.retention.time=30d"
+            - "--web.enable-lifecycle"
+            - "--web.enable-admin-api"
+        volumes:
+            - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - ./monitoring/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+            - prometheus_data:/prometheus
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:9090/-/healthy",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    grafana:
+        image: grafana/grafana
+        container_name: barakah-grafana
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin123
+            - GF_USERS_ALLOW_SIGN_UP=false
+            - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel,grafana-clock-panel
+            - GF_FEATURE_TOGGLES_ENABLE=publicDashboards
+        volumes:
+            - grafana_data:/var/lib/grafana
+            - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+        depends_on:
+            prometheus:
+                condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:3000/api/health || exit 1",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 60s
+        networks:
+            - barakah-network
+        restart: unless-stopped
+
+    alertmanager:
+        image: prom/alertmanager:v0.26.0
+        container_name: barakah-alertmanager
+        ports:
+            - "9093:9093"
+        command:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--web.external-url=http://localhost:9093"
+        volumes:
+            - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+            - alertmanager_data:/alertmanager
+        depends_on:
+            prometheus:
+                condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:9093/-/healthy",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
             start_period: 30s
         networks:
             - barakah-network
@@ -340,4 +509,10 @@ volumes:
     transaction_service_logs:
         driver: local
     gateway_service_logs:
+        driver: local
+    prometheus_data:
+        driver: local
+    grafana_data:
+        driver: local
+    alertmanager_data:
         driver: local

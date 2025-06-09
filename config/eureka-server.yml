@@ -1,40 +1,58 @@
 server:
-  port: 8761
+    port: 8761
 
 spring:
-  security:
-    user:
-      name: ${EUREKA_USERNAME:eureka-user}
-      password: ${EUREKA_PASSWORD:eureka-pass}
-      roles: EUREKA_ADMIN
+    application:
+        name: eureka-server
+    
+    cloud:
+        vault:
+            enabled: ${VAULT_ENABLED:false}
+            host: ${SPRING_CLOUD_VAULT_HOST:localhost}
+            port: ${SPRING_CLOUD_VAULT_PORT:8200}
+            scheme: ${SPRING_CLOUD_VAULT_SCHEME:http}
+            authentication: TOKEN
+            token: ${SPRING_CLOUD_VAULT_TOKEN:root-token}
+            kv:
+                enabled: true
+                backend: secret
+                profile-separator: '/'
+                default-context: eureka-server
+                application-name: eureka-server
+                
+    security:
+        user:
+            name: ${vault:secret/data/eureka#username:eureka-user}
+            password: ${vault:secret/data/eureka#password:eureka-pass}
+            roles: EUREKA_ADMIN
 
 eureka:
-  instance:
-    hostname: ${EUREKA_HOSTNAME:localhost}
-    prefer-ip-address: false
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
-  client:
-    register-with-eureka: false
-    fetch-registry: false
-    service-url:
-      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
-  server:
-    enable-self-preservation: true
-    eviction-interval-timer-in-ms: 15000
-    response-cache-update-interval-ms: 5000
+    instance:
+        hostname: ${EUREKA_HOSTNAME:localhost}
+        prefer-ip-address: ${EUREKA_PREFER_IP:false}
+        lease-renewal-interval-in-seconds: 30
+        lease-expiration-duration-in-seconds: 90
+    client:
+        register-with-eureka: false
+        fetch-registry: false
+        service-url:
+            defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+    server:
+        enable-self-preservation: true
+        eviction-interval-timer-in-ms: 15000
+        response-cache-update-interval-ms: 5000
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,refresh,env,metrics
-  endpoint:
-    health:
-      show-details: always
+    endpoints:
+        web:
+            exposure:
+                include: health,info,refresh,env,metrics
+    endpoint:
+        health:
+            show-details: always
 
 logging:
-  level:
-    com.netflix.eureka: INFO
-    com.netflix.discovery: INFO
-    com.barakahfund: DEBUG
+    level:
+        com.netflix.eureka: INFO
+        com.netflix.discovery: INFO
+        com.barakahfund: DEBUG

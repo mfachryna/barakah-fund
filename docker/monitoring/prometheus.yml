@@ -1,0 +1,103 @@
+global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+    external_labels:
+        cluster: "barakah-fund-dev"
+        environment: "development"
+
+alerting:
+    alertmanagers:
+        - static_configs:
+              - targets:
+                    - alertmanager:9093
+
+rule_files:
+    - "alert-rules.yml"
+
+scrape_configs:
+    - job_name: "prometheus"
+      static_configs:
+          - targets: ["localhost:9090"]
+
+    - job_name: "eureka-server"
+      static_configs:
+          - targets: ["eureka-server:8761"]
+      metrics_path: "/actuator/prometheus"
+      scrape_interval: 30s
+      scrape_timeout: 10s
+
+    - job_name: "user-service"
+      static_configs:
+          - targets: ["user-service:8081"]
+      metrics_path: "/user-service/actuator/prometheus"
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+          - source_labels: []
+            target_label: service
+            replacement: "user-service"
+
+    - job_name: "account-service"
+      static_configs:
+          - targets: ["account-service:8082"]
+      metrics_path: "/account-service/actuator/prometheus"
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+          - source_labels: []
+            target_label: service
+            replacement: "account-service"
+
+    - job_name: "transaction-service"
+      static_configs:
+          - targets: ["transaction-service:8083"]
+      metrics_path: "/transaction-service/actuator/prometheus"
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+          - source_labels: []
+            target_label: service
+            replacement: "transaction-service"
+
+    - job_name: "gateway-service"
+      static_configs:
+          - targets: ["gateway-service:8070"]
+      metrics_path: "/actuator/prometheus"
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+          - source_labels: []
+            target_label: service
+            replacement: "gateway-service"
+
+    - job_name: "postgres-exporter"
+      static_configs:
+          - targets: ["postgres:5432"]
+      metrics_path: "/metrics"
+      scrape_interval: 30s
+
+    - job_name: "redis-exporter"
+      static_configs:
+          - targets: ["redis:6379"]
+      metrics_path: "/metrics"
+      scrape_interval: 30s
+
+    - job_name: "kafka-exporter"
+      static_configs:
+          - targets: ["kafka:9192"]
+      metrics_path: "/metrics"
+      scrape_interval: 30s
+
+    - job_name: "keycloak"
+      static_configs:
+          - targets: ["keycloak:8080"]
+      metrics_path: "/realms/barakah/metrics"
+      scrape_interval: 30s

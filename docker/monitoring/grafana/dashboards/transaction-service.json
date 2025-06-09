@@ -1,0 +1,654 @@
+{
+    "id": null,
+    "title": "Transaction Service Dashboard",
+    "tags": ["transaction-service", "barakah-fund", "financial"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 0,
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 0,
+    "panels": [
+        {
+            "id": 1,
+            "title": "Service Health",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "up{job=\"transaction-service\"}",
+                    "legendFormat": "Service Status",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": {
+                                    "text": "DOWN",
+                                    "color": "red"
+                                },
+                                "1": {
+                                    "text": "UP",
+                                    "color": "green"
+                                }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": 0
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "id": 2,
+            "title": "Transaction Volume",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(transaction_creation_total[5m]) * 60",
+                    "legendFormat": "Transactions/min",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(transaction_creation_total{status=\"success\"}[5m]) * 60",
+                    "legendFormat": "Successful/min",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(transaction_creation_total{status=\"failed\"}[5m]) * 60",
+                    "legendFormat": "Failed/min",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Transactions/min",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 6,
+                "y": 0
+            }
+        },
+        {
+            "id": 3,
+            "title": "Transaction Success Rate",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "rate(transaction_creation_total{status=\"success\"}[5m]) / rate(transaction_creation_total[5m]) * 100",
+                    "legendFormat": "Success Rate %",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 90
+                            },
+                            {
+                                "color": "green",
+                                "value": 95
+                            }
+                        ]
+                    },
+                    "unit": "percent"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 9,
+                "x": 15,
+                "y": 0
+            }
+        },
+        {
+            "id": 4,
+            "title": "Transaction Amount Distribution",
+            "type": "heatmap",
+            "targets": [
+                {
+                    "expr": "rate(transaction_amount_bucket[5m])",
+                    "legendFormat": "{{le}}",
+                    "refId": "A"
+                }
+            ],
+            "heatmap": {
+                "xBucketSize": null,
+                "xBucketNumber": null,
+                "yBucketSize": null,
+                "yBucketNumber": null
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 8
+            }
+        },
+        {
+            "id": 5,
+            "title": "Account Balance Changes",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(account_balance_updates_total[5m])",
+                    "legendFormat": "Balance Updates/sec",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(account_balance_updates_total{type=\"credit\"}[5m])",
+                    "legendFormat": "Credits/sec",
+                    "refId": "B"
+                },
+                {
+                    "expr": "rate(account_balance_updates_total{type=\"debit\"}[5m])",
+                    "legendFormat": "Debits/sec",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Updates/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 8
+            }
+        },
+        {
+            "id": 6,
+            "title": "Transaction Types Distribution",
+            "type": "piechart",
+            "targets": [
+                {
+                    "expr": "sum(rate(transaction_creation_total[5m])) by (type)",
+                    "legendFormat": "{{type}}",
+                    "refId": "A"
+                }
+            ],
+            "options": {
+                "pieType": "pie",
+                "reduceOptions": {
+                    "values": false,
+                    "calcs": ["lastNotNull"],
+                    "fields": ""
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "right"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 17
+            }
+        },
+        {
+            "id": 7,
+            "title": "Response Time Distribution",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"transaction-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 95th",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{service=\"transaction-service\"}[5m])) by (uri, le))",
+                    "legendFormat": "{{uri}} - 50th",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Response Time (s)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 17
+            }
+        },
+        {
+            "id": 8,
+            "title": "Database Metrics",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "hikaricp_connections_active{service=\"transaction-service\"}",
+                    "legendFormat": "Active Connections",
+                    "refId": "A"
+                },
+                {
+                    "expr": "hikaricp_connections_max{service=\"transaction-service\"}",
+                    "legendFormat": "Max Connections",
+                    "refId": "B"
+                },
+                {
+                    "expr": "hikaricp_connections_pending{service=\"transaction-service\"}",
+                    "legendFormat": "Pending Connections",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Connections",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 17
+            }
+        },
+        {
+            "id": 9,
+            "title": "Transaction Processing Time",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(transaction_processing_duration_seconds_bucket[5m])) by (le))",
+                    "legendFormat": "95th Percentile",
+                    "refId": "A"
+                },
+                {
+                    "expr": "histogram_quantile(0.75, sum(rate(transaction_processing_duration_seconds_bucket[5m])) by (le))",
+                    "legendFormat": "75th Percentile",
+                    "refId": "B"
+                },
+                {
+                    "expr": "histogram_quantile(0.50, sum(rate(transaction_processing_duration_seconds_bucket[5m])) by (le))",
+                    "legendFormat": "50th Percentile",
+                    "refId": "C"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Processing Time (s)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 26
+            }
+        },
+        {
+            "id": 10,
+            "title": "Circuit Breaker Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_circuitbreaker_state{service=\"transaction-service\"}",
+                    "legendFormat": "{{name}} - {{state}}",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 26
+            }
+        },
+        {
+            "id": 11,
+            "title": "Transaction Categories",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(transaction_creation_total[5m])) by (category)",
+                    "legendFormat": "{{category}}",
+                    "refId": "A"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Transactions/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 0,
+                "y": 35
+            }
+        },
+        {
+            "id": 12,
+            "title": "Error Distribution",
+            "type": "piechart",
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_seconds_count{service=\"transaction-service\",status=~\"4..|5..\"}[5m])) by (status)",
+                    "legendFormat": "{{status}}",
+                    "refId": "A"
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 8,
+                "y": 35
+            }
+        },
+        {
+            "id": 13,
+            "title": "JVM Memory Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "jvm_memory_used_bytes{service=\"transaction-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Used (MB)",
+                    "refId": "A"
+                },
+                {
+                    "expr": "jvm_memory_max_bytes{service=\"transaction-service\",area=\"heap\"} / 1024 / 1024",
+                    "legendFormat": "Heap Max (MB)",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Memory (MB)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 8,
+                "x": 16,
+                "y": 35
+            }
+        },
+        {
+            "id": 14,
+            "title": "Daily Transaction Volume",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(increase(transaction_creation_total[24h]))",
+                    "legendFormat": "24h Total",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(increase(transaction_creation_total{status=\"success\"}[24h]))",
+                    "legendFormat": "24h Successful",
+                    "refId": "B"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 0,
+                "y": 44
+            }
+        },
+        {
+            "id": 15,
+            "title": "Total Transaction Value",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(transaction_value_total)",
+                    "legendFormat": "Total Value",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(increase(transaction_value_total[24h]))",
+                    "legendFormat": "24h Value",
+                    "refId": "B"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "unit": "currencyUSD"
+                }
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 8,
+                "y": 44
+            }
+        },
+        {
+            "id": 16,
+            "title": "Rate Limiter Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_ratelimiter_available_permissions{service=\"transaction-service\"}",
+                    "legendFormat": "{{name}} - Available",
+                    "refId": "A",
+                    "format": "table"
+                }
+            ],
+            "gridPos": {
+                "h": 8,
+                "w": 8,
+                "x": 16,
+                "y": 44
+            }
+        },
+        {
+            "id": 17,
+            "title": "gRPC Server Metrics",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(grpc_server_requests_total{service=\"transaction-service\"}[5m])) by (grpc_method)",
+                    "legendFormat": "{{grpc_method}}",
+                    "refId": "A"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Requests/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 52
+            }
+        },
+        {
+            "id": 18,
+            "title": "gRPC Response Times",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(grpc_server_request_duration_seconds_bucket{service=\"transaction-service\"}[5m])) by (grpc_method, le))",
+                    "legendFormat": "{{grpc_method}} - 95th",
+                    "refId": "A"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Response Time (s)",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 52
+            }
+        },
+        {
+            "id": 19,
+            "title": "Cache Performance",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "rate(cache_gets_total{service=\"transaction-service\",result=\"hit\"}[5m])",
+                    "legendFormat": "{{cache}} - Hits/sec",
+                    "refId": "A"
+                },
+                {
+                    "expr": "rate(cache_gets_total{service=\"transaction-service\",result=\"miss\"}[5m])",
+                    "legendFormat": "{{cache}} - Misses/sec",
+                    "refId": "B"
+                }
+            ],
+            "yAxes": [
+                {
+                    "label": "Operations/sec",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                }
+            ],
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 61
+            }
+        },
+        {
+            "id": 20,
+            "title": "Fraud Detection Metrics",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(increase(transaction_fraud_detected_total[1h]))",
+                    "legendFormat": "Fraud Detected/Hour",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(increase(transaction_blocked_total[1h]))",
+                    "legendFormat": "Blocked/Hour",
+                    "refId": "B"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 10
+                            },
+                            {
+                                "color": "red",
+                                "value": 50
+                            }
+                        ]
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 61
+            }
+        }
+    ]
+}

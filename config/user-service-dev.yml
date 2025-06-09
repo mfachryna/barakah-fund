@@ -1,8 +1,33 @@
 spring:
+    application:
+        name: user-service
+
+    cloud:
+        config:
+            enabled: false
+        vault:
+            enabled: true
+            host: ${SPRING_CLOUD_VAULT_HOST:localhost}
+            port: ${SPRING_CLOUD_VAULT_PORT:8200}
+            scheme: ${SPRING_CLOUD_VAULT_SCHEME:http}
+            authentication: TOKEN
+            token: ${SPRING_CLOUD_VAULT_TOKEN:root-token}
+            kv:
+                enabled: true
+                backend: secret
+                profile-separator: "/"
+                default-context: user-service
+                application-name: user-service
+            config:
+                lifecycle:
+                    enabled: true
+                    min-renewal: 10s
+                    expiry-threshold: 1m
+
     datasource:
-        url: jdbc:postgresql://localhost:5432/barakah_users
-        username: barakah_user
-        password: barakah_password
+        url: jdbc:postgresql://${vault:secret/data/database/user-service#host:postgres}:${vault:secret/data/database/user-service#port:5432}/${vault:secret/data/database/user-service#database:barakah_main}
+        username: ${vault:secret/data/database/user-service#username:barakah_admin}
+        password: ${vault:secret/data/database/user-service#password:barakah_admin_pass}
         driver-class-name: org.postgresql.Driver
         hikari:
             maximum-pool-size: 10
@@ -10,15 +35,6 @@ spring:
             connection-timeout: 20000
             idle-timeout: 300000
             max-lifetime: 1200000
-
-    cloud:
-        config:
-            enabled: false
-        discovery:
-            enabled: false
-        service-registry:
-            auto-registration:
-                enabled: false
 
     jpa:
         hibernate:
@@ -41,17 +57,35 @@ spring:
     flyway:
         enabled: true
         baseline-on-migrate: true
+        baseline-version: 0
+        out-of-order: true
+        validate-on-migrate: false
         locations: classpath:db/migration
 
     transaction:
         default-timeout: 30
+
+    data:
+        redis:
+            host: ${REDIS_HOST:localhost}
+            port: ${REDIS_PORT:6379}
+            password: ${REDIS_PASSWORD:}
+            database: 2
+            timeout: 2000
+            lettuce:
+                pool:
+                    max-active: 8
+                    max-idle: 8
+                    min-idle: 0
+                    max-wait: -1ms
+
     cache:
-        type: simple
-    redis:
-        host: localhost
-        port: 6379
-        timeout: 2000ms
-        database: 0
+        type: redis
+        redis:
+            time-to-live: 3600000
+            cache-null-values: false
+            use-key-prefix: true
+            key-prefix: "user-service:"
 
 server:
     port: 8081
@@ -69,45 +103,61 @@ grpc:
         max-inbound-message-size: 4MB
         max-outbound-message-size: 4MB
 
+    client:
+        user-service:
+            address: discovery:///account-service
+            negotiationType: plaintext
+            keepAliveTime: 30s
+            keepAliveTimeout: 5s
+            keepAliveWithoutCalls: true
+            maxRetryAttempts: 3
+        transaction-service:
+            address: discovery:///transaction-service
+            negotiationType: plaintext
+            keepAliveTime: 30s
+            keepAliveTimeout: 5s
+            keepAliveWithoutCalls: true
+            maxRetryAttempts: 3
+
 eureka:
     client:
         service-url:
-            defaultZone: http://localhost:8761/eureka/
+            defaultZone: http://${EUREKA_HOST:eureka-server}:${EUREKA_PORT:8761}/eureka/
+        eureka-server-connect-timeout-seconds: 5
+        eureka-server-read-timeout-seconds: 8
+        registry-fetch-interval-seconds: 30
         register-with-eureka: true
         fetch-registry: true
         healthcheck:
             enabled: true
-        initial-instance-info-replication-interval-seconds: 5
-        instance-info-replication-interval-seconds: 5
     instance:
         prefer-ip-address: true
-        hostname: localhost
-        lease-renewal-interval-in-seconds: 5
-        lease-expiration-duration-in-seconds: 10
+        hostname: ${HOSTNAME:localhost}
+        instance-id: ${spring.application.name}:${random.value}
+        lease-renewal-interval-in-seconds: 30
+        lease-expiration-duration-in-seconds: 90
         metadata-map:
             grpc.port: 9091
             management.context-path: /user-service/actuator
 
 keycloak:
-    auth-server-url: http://localhost:8080
-    realm: barakah
-    resource: user-service
+    auth-server-url: ${vault:secret/data/keycloak#auth-server-url:http://keycloak:8080}
+    realm: ${vault:secret/data/keycloak#realm:barakah}
+    resource: ${vault:secret/data/keycloak#resource:user-service}
     credentials:
-        secret: user-service-secret-change-me
-
+        secret: ${vault:secret/data/keycloak#client-secret:user-service-secret-change-me}
     admin:
-        username: admin
-        password: admin
-        client-id: admin-cli
-
+        username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+        password: ${KEYCLOAK_ADMIN_PASSWORD:admin123}
+        client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
     mock:
-        enabled: true
+        enabled: ${KEYCLOAK_MOCK_ENABLED:true}
 
 management:
     endpoints:
         web:
             exposure:
-                include: health,info,metrics,prometheus,flyway,liquibase
+                include: "*"
             base-path: /actuator
     endpoint:
         health:
@@ -115,6 +165,18 @@ management:
             show-components: always
         metrics:
             enabled: true
+    metrics:
+        export:
+            prometheus:
+                enabled: true
+        distribution:
+            percentiles-histogram:
+                http.server.requests: true
+            slo:
+                http.server.requests: 50ms,100ms,200ms,300ms,500ms,1s,2s,3s,4s,5s
+        tags:
+            application: ${spring.application.name}
+            environment: ${SPRING_PROFILES_ACTIVE:dev}
     health:
         eureka:
             enabled: true
@@ -128,24 +190,9 @@ management:
 logging:
     level:
         com.barakah: DEBUG
-        com.barakah.user: TRACE
-        com.barakah.shared: DEBUG
-        org.springframework.security: DEBUG
-        org.springframework.web: DEBUG
-        org.springframework.transaction: DEBUG
-        org.keycloak: DEBUG
-        org.hibernate.SQL: DEBUG
-        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-        net.devh.boot.grpc: DEBUG
+        org.springframework.cloud.gateway: DEBUG
         io.grpc: INFO
-        org.flywaydb: INFO
-    pattern:
-        console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-        file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file:
-        name: logs/user-service-dev.log
-        max-size: 10MB
-        max-history: 30
+        net.devh: DEBUG
 
 app:
     security:
@@ -156,8 +203,8 @@ app:
             allow-credentials: true
             max-age: 3600
         jwt:
-            secret: dev-secret-key-change-in-production
-            expiration: 86400000
+            secret: ${JWT_SECRET:dev-secret-key-change-in-production}
+            expiration: ${JWT_EXPIRATION:86400000}
 
     user:
         default-role: USER
@@ -172,13 +219,118 @@ app:
         auth-service:
             url: http://localhost:8082
             timeout: 5000
-        notification-service:
+        transaction-service:
             url: http://localhost:8083
+            timeout: 5000
+        notification-service:
+            url: http://localhost:8084
             timeout: 3000
 
-features:
-    email-verification: false
-    sms-verification: false
-    audit-logging: true
-    rate-limiting: false
-    cache-enabled: false
+barakah:
+    rate-limiting:
+        enabled: ${features.rate-limiting:true}
+        http:
+            enabled: true
+        grpc:
+            enabled: true
+
+        default:
+            limit: 100
+            duration-seconds: 60
+
+resilience4j:
+    circuitbreaker:
+        configs:
+            default:
+                failure-rate-threshold: 50
+                minimum-number-of-calls: 10
+                sliding-window-size: 20
+                wait-duration-in-open-state: 30s
+                permitted-number-of-calls-in-half-open-state: 5
+                max-wait-duration-in-half-open-state: 10s
+                sliding-window-type: count_based
+                record-failure-predicate: com.barakah.shared.config.ServiceFailurePredicate
+
+        instances:
+            keycloak:
+                base-config: default
+                failure-rate-threshold: 60
+                minimum-number-of-calls: 5
+                wait-duration-in-open-state: 60s
+
+            database:
+                base-config: default
+                failure-rate-threshold: 70
+                minimum-number-of-calls: 5
+                wait-duration-in-open-state: 30s
+
+    ratelimiter:
+        configs:
+            default:
+                limit-for-period: 100
+                limit-refresh-period: 1s
+                timeout-duration: 0s
+
+        instances:
+            user-creation:
+                base-config: default
+                limit-for-period: 10
+                limit-refresh-period: 1m
+                timeout-duration: 2s
+
+            user-queries:
+                base-config: default
+                limit-for-period: 200
+                limit-refresh-period: 1s
+
+            keycloak-operations:
+                base-config: default
+                limit-for-period: 30
+                limit-refresh-period: 1m
+
+    retry:
+        configs:
+            default:
+                max-attempts: 3
+                wait-duration: 500ms
+                exponential-backoff-multiplier: 2
+                # retry-on-result-predicate: com.barakah.shared.config.ServiceRetryPredicate
+                retry-exception-predicate: com.barakah.shared.config.ServiceRetryPredicate
+                retry-exceptions:
+                    - java.net.ConnectException
+                    - java.net.SocketTimeoutException
+                    - java.util.concurrent.TimeoutException
+                    - org.springframework.dao.QueryTimeoutException
+                    - org.springframework.dao.TransientDataAccessException
+                ignore-exceptions:
+                    - java.lang.IllegalArgumentException
+                    - java.lang.IllegalStateException
+                    - com.barakah.user.exception.UserExceptions$UserAlreadyExistsException
+                    - com.barakah.user.exception.UserExceptions$UserNotFoundException
+                    - com.barakah.shared.exception.BusinessException
+
+        instances:
+            database:
+                base-config: default
+                max-attempts: 3
+                wait-duration: 200ms
+
+            keycloak:
+                base-config: default
+                max-attempts: 2
+                wait-duration: 1000ms
+
+    bulkhead:
+        configs:
+            default:
+                max-concurrent-calls: 50
+                max-wait-duration: 1000ms
+
+        instances:
+            user-operations:
+                base-config: default
+                max-concurrent-calls: 30
+
+            keycloak-operations:
+                base-config: default
+                max-concurrent-calls: 10

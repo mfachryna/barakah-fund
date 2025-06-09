@@ -1,0 +1,89 @@
+groups:
+    - name: service_health
+      rules:
+          - alert: ServiceDown
+            expr: up == 0
+            for: 30s
+            labels:
+                severity: critical
+            annotations:
+                summary: "Service {{ $labels.job }} is down"
+                description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 30 seconds"
+
+          - alert: HighErrorRate
+            expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.1
+            for: 2m
+            labels:
+                severity: warning
+            annotations:
+                summary: "High error rate on {{ $labels.service }}"
+                description: "Error rate is {{ $value }} errors per second on {{ $labels.service }}"
+
+    - name: performance
+      rules:
+          - alert: HighResponseTime
+            expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m])) > 1
+            for: 2m
+            labels:
+                severity: warning
+            annotations:
+                summary: "High response time on {{ $labels.service }}"
+                description: "95th percentile response time is {{ $value }}s on {{ $labels.service }}"
+
+          - alert: HighCPUUsage
+            expr: system_cpu_usage > 0.8
+            for: 5m
+            labels:
+                severity: warning
+            annotations:
+                summary: "High CPU usage on {{ $labels.service }}"
+                description: "CPU usage is {{ $value }}% on {{ $labels.service }}"
+
+          - alert: HighMemoryUsage
+            expr: jvm_memory_used_bytes / jvm_memory_max_bytes > 0.8
+            for: 5m
+            labels:
+                severity: warning
+            annotations:
+                summary: "High memory usage on {{ $labels.service }}"
+                description: "Memory usage is {{ $value }}% on {{ $labels.service }}"
+
+    - name: business_logic
+      rules:
+          - alert: HighTransactionFailureRate
+            expr: rate(transaction_creation_total{status="failed"}[5m]) / rate(transaction_creation_total[5m]) > 0.05
+            for: 2m
+            labels:
+                severity: critical
+            annotations:
+                summary: "High transaction failure rate"
+                description: "Transaction failure rate is {{ $value }}%"
+
+          - alert: DatabaseConnectionPoolExhausted
+            expr: hikaricp_connections_active / hikaricp_connections_max > 0.9
+            for: 1m
+            labels:
+                severity: critical
+            annotations:
+                summary: "Database connection pool almost exhausted"
+                description: "Connection pool usage is {{ $value }}% on {{ $labels.service }}"
+
+    - name: resilience
+      rules:
+          - alert: CircuitBreakerOpen
+            expr: resilience4j_circuitbreaker_state{state="open"} == 1
+            for: 30s
+            labels:
+                severity: critical
+            annotations:
+                summary: "Circuit breaker is open"
+                description: "Circuit breaker {{ $labels.name }} is open on {{ $labels.service }}"
+
+          - alert: HighRateLimitRejections
+            expr: rate(resilience4j_ratelimiter_calls_total{kind="failed"}[5m]) > 10
+            for: 2m
+            labels:
+                severity: warning
+            annotations:
+                summary: "High rate limit rejections"
+                description: "Rate limiter {{ $labels.name }} is rejecting {{ $value }} requests per second"

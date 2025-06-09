@@ -1,0 +1,150 @@
+{
+    "id": null,
+    "title": "Barakah Fund - Overview Dashboard",
+    "tags": ["barakah-fund", "microservices", "overview"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+        {
+            "id": 1,
+            "title": "Service Health Status",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "up",
+                    "legendFormat": "{{job}}"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [
+                        {
+                            "options": {
+                                "0": { "text": "DOWN", "color": "red" },
+                                "1": { "text": "UP", "color": "green" }
+                            },
+                            "type": "value"
+                        }
+                    ],
+                    "thresholds": {
+                        "steps": [
+                            { "color": "red", "value": 0 },
+                            { "color": "green", "value": 1 }
+                        ]
+                    }
+                }
+            },
+            "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 }
+        },
+        {
+            "id": 2,
+            "title": "Request Rate (req/sec)",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (service)",
+                    "legendFormat": "{{service}}"
+                }
+            ],
+            "gridPos": { "h": 9, "w": 12, "x": 0, "y": 8 }
+        },
+        {
+            "id": 3,
+            "title": "Response Time (95th percentile)",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (service, le))",
+                    "legendFormat": "{{service}}"
+                }
+            ],
+            "gridPos": { "h": 9, "w": 12, "x": 12, "y": 8 }
+        },
+        {
+            "id": 4,
+            "title": "Error Rate (%)",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..|5..\"}[5m])) by (service) / sum(rate(http_server_requests_seconds_count[5m])) by (service) * 100",
+                    "legendFormat": "{{service}}"
+                }
+            ],
+            "gridPos": { "h": 9, "w": 12, "x": 0, "y": 17 }
+        },
+        {
+            "id": 5,
+            "title": "Circuit Breaker Status",
+            "type": "table",
+            "targets": [
+                {
+                    "expr": "resilience4j_circuitbreaker_state",
+                    "legendFormat": "{{name}} - {{state}}"
+                }
+            ],
+            "gridPos": { "h": 9, "w": 12, "x": 12, "y": 17 }
+        },
+        {
+            "id": 6,
+            "title": "JVM Memory Usage",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"} * 100",
+                    "legendFormat": "{{service}} - Heap"
+                }
+            ],
+            "gridPos": { "h": 9, "w": 12, "x": 0, "y": 26 }
+        },
+        {
+            "id": 7,
+            "title": "Database Connection Pool",
+            "type": "graph",
+            "targets": [
+                {
+                    "expr": "hikaricp_connections_active",
+                    "legendFormat": "{{service}} - Active"
+                },
+                {
+                    "expr": "hikaricp_connections_max",
+                    "legendFormat": "{{service}} - Max"
+                }
+            ],
+            "gridPos": { "h": 9, "w": 12, "x": 12, "y": 26 }
+        },
+        {
+            "id": 8,
+            "title": "Business Metrics - Transactions",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(increase(transaction_creation_total[1h]))",
+                    "legendFormat": "Transactions/Hour"
+                },
+                {
+                    "expr": "sum(increase(transaction_creation_total{status=\"failed\"}[1h]))",
+                    "legendFormat": "Failed/Hour"
+                }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 }
+        },
+        {
+            "id": 9,
+            "title": "Business Metrics - Users & Accounts",
+            "type": "stat",
+            "targets": [
+                {
+                    "expr": "sum(increase(user_creation_total[1h]))",
+                    "legendFormat": "New Users/Hour"
+                },
+                {
+                    "expr": "sum(increase(account_creation_total[1h]))",
+                    "legendFormat": "New Accounts/Hour"
+                }
+            ],
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 }
+        }
+    ],
+    "time": { "from": "now-1h", "to": "now" },
+    "refresh": "30s"
+}

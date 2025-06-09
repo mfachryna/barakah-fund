@@ -22,6 +22,18 @@ spring:
             properties:
                 spring.json.trusted.packages: "com.barakah.shared.event"
 
+    cache:
+        type: redis
+        redis:
+            time-to-live: 300000
+            cache-null-values: false
+            key-prefix: "acc:"
+
+    redis:
+        host: localhost
+        port: 6379
+        timeout: 2000ms
+        database: 1
     jpa:
         hibernate:
             ddl-auto: validate
@@ -165,9 +177,70 @@ app:
             url: http://localhost:8084
             timeout: 3000
 
+resilience4j:
+    circuitbreaker:
+        instances:
+            account-service:
+                failure-rate-threshold: 50
+                minimum-number-of-calls: 10
+                wait-duration-in-open-state: 60s
+                sliding-window-size: 20
+                record-failure-predicate: com.barakah.shared.config.ServiceFailurePredicate
+            database:
+                failure-rate-threshold: 60
+                minimum-number-of-calls: 5
+                wait-duration-in-open-state: 30s
+
+    retry:
+        configs:
+            default:
+                max-attempts: 3
+                wait-duration: 500ms
+                exponential-backoff-multiplier: 2
+                retry-exception-predicate: com.barakah.shared.config.ServiceRetryPredicate
+                retry-exceptions:
+                    - java.net.ConnectException
+                    - java.net.SocketTimeoutException
+                    - java.net.SocketException
+                    - java.util.concurrent.TimeoutException
+                    - java.sql.SQLTransientConnectionException
+                    - org.springframework.dao.QueryTimeoutException
+                    - org.springframework.dao.TransientDataAccessException
+                    - org.springframework.dao.CannotAcquireLockException
+                    - org.springframework.transaction.CannotCreateTransactionException
+                    - org.springframework.web.client.ResourceAccessException
+                
+                ignore-exceptions:
+                    - java.lang.IllegalArgumentException
+                    - java.lang.IllegalStateException 
+                    - java.lang.SecurityException
+                    - jakarta.validation.ValidationException
+                    - org.springframework.web.bind.MethodArgumentNotValidException
+                    - org.springframework.security.access.AccessDeniedException
+                    - org.springframework.dao.DataIntegrityViolationException
+                    - com.barakah.account.exception.AccountExceptions$AccountAlreadyExistsException
+                    - com.barakah.account.exception.AccountExceptions$AccountNotFoundException
+                    - com.barakah.account.exception.AccountExceptions$InsufficientBalanceException
+                    - com.barakah.shared.exception.BusinessException
+        instances:
+            database:
+                base-config: default
+                max-attempts: 3
+                wait-duration: 200ms
+                retry-exception-predicate: com.barakah.shared.config.ServiceRetryPredicate
+
+rate-limit:
+    per-endpoint:
+        create-account: 5
+        get-account: 100
+        get-balance: 200
+        update-balance: 50
+        list-accounts: 30
+        validate-account: 150
+
 features:
     account-validation: true
     balance-tracking: true
     audit-logging: true
-    rate-limiting: false
-    cache-enabled: false
+    rate-limiting: true
+    cache-enabled: true
