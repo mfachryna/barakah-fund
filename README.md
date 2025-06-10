@@ -1,3 +1,3 @@
 # Barakah Fund - Islamic Financing Platform
 
-A comprehensive microservices platform for Islamic financing and lending, built with modern Java technologies and gRPC communication.
+A simple microservices e-wallet application, built with modern Java Spring Boot technologies and gRPC communication.

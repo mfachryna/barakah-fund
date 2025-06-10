@@ -1,4 +1,3 @@
-// filepath: /Users/mfachryna/Documents/kodingan/BSI/ojt_spesifik/barakah-fund/barakah-fund/templates/transaction-service-service.yaml
 {{- if .Values.transactionService.enabled }}
 apiVersion: v1
 kind: Service
