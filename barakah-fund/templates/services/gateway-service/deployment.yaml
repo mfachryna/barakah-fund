@@ -34,6 +34,23 @@ spec:
               done
               echo "Redis is ready!"
         
+        - name: wait-for-keycloak
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Keycloak port to be available..."
+              until nc -z {{ include "barakah-fund.fullname" . }}-keycloak 8080; do
+                echo "Keycloak port 8080 not ready, waiting..."
+                sleep 10
+              done
+              echo "Keycloak port is ready!"
+              
+              echo "Waiting additional 30 seconds for Keycloak to fully initialize..."
+              sleep 30
+              echo "Keycloak should be ready now!"
+
       containers:
         - name: gateway-service
           image: {{ .Values.gatewayService.image.repository }}:{{ .Values.gatewayService.image.tag }}
@@ -46,7 +63,7 @@ spec:
               containerPort: 9090
               protocol: TCP
             - name: management
-              containerPort: 8080
+              containerPort: 8070
               protocol: TCP
           env:
             {{- range $key, $value := .Values.gatewayService.env }}
@@ -56,8 +73,8 @@ spec:
           
           readinessProbe:
             httpGet:
-              path: {{ .Values.gatewayService.readinessProbe.path }}
-              port: 8080
+              path: {{ .Values.gatewayService.readinessProbe.httpGet.path }}
+              port:  {{ .Values.gatewayService.readinessProbe.httpGet.port }}
             initialDelaySeconds: {{ .Values.gatewayService.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.gatewayService.readinessProbe.periodSeconds }}
             timeoutSeconds: 5
@@ -66,8 +83,8 @@ spec:
           
           livenessProbe:
             httpGet:
-              path: {{ .Values.gatewayService.livenessProbe.path }}
-              port: 8080
+              path: {{ .Values.gatewayService.livenessProbe.httpGet.path }}
+              port:  {{ .Values.gatewayService.livenessProbe.httpGet.port }}
             initialDelaySeconds: {{ .Values.gatewayService.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.gatewayService.livenessProbe.periodSeconds }}
             timeoutSeconds: 5
@@ -76,8 +93,8 @@ spec:
           
           startupProbe:
             httpGet:
-              path: {{ .Values.gatewayService.startupProbe.path }}
-              port: 8080
+              path: {{ .Values.gatewayService.startupProbe.httpGet.path }}
+              port:  {{ .Values.gatewayService.startupProbe.httpGet.port }}
             initialDelaySeconds: {{ .Values.gatewayService.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.gatewayService.startupProbe.periodSeconds }}
             timeoutSeconds: 5

@@ -1,0 +1,14 @@
+{{- if .Values.customHeaders.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "barakah-fund.fullname" . }}-custom-headers
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "barakah-fund.labels" . | nindent 4 }}
+    app.kubernetes.io/component: custom-headers
+data:
+  {{- with .Values.customHeaders.data }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+{{- end }}

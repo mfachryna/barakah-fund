@@ -173,21 +173,8 @@ security:
     fsGroup: 1001
     jwtSecret: "your-jwt-secret-key-change-this-in-production"
 
-ingress:
-    enabled: false
-    className: "nginx"
-    annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /
-        nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    hosts:
-      - host: barakah-fund.local
-        paths:
-            - path: /
-              pathType: Prefix
-    tls: []
-
 healthCheck:
-    enabled: true
+    enabled: false
     livenessProbe:
         httpGet:
             path: /actuator/health/liveness
@@ -262,6 +249,7 @@ userService:
     env:
         SERVER_PORT: "8081"
         GRPC_SERVER_PORT: "9091"
+        GRPC_SERVER_ENABLED: "true"
         MANAGEMENT_SERVER_PORT: "8080"
         SERVER_SERVLET_CONTEXT_PATH: "/user-service"
 
@@ -359,6 +347,7 @@ accountService:
         SERVER_PORT: "8082"
         SERVER_SERVLET_CONTEXT_PATH: "/account-service"
         GRPC_SERVER_PORT: "9092"
+        GRPC_SERVER_ENABLED: "true"
         GRPC_SERVER_ENABLE_REFLECTION: "true"
         GRPC_SERVER_MAX_INBOUND_MESSAGE_SIZE: "4MB"
         GRPC_SERVER_MAX_OUTBOUND_MESSAGE_SIZE: "4MB"
@@ -780,7 +769,7 @@ transactionService:
 
 gatewayService:
     enabled: true
-    replicaCount: 1
+    replicaCount: 3
 
     image:
         repository: "barakah/gateway-service"
@@ -828,6 +817,7 @@ gatewayService:
         SPRING_CACHE_REDIS_TIME_TO_LIVE: "120000"
         
         GRPC_SERVER_PORT: "9090"
+        GRPC_SERVER_ENABLED: "true"
         GRPC_SERVER_ENABLE_REFLECTION: "true"
         GRPC_SERVER_MAX_INBOUND_MESSAGE_SIZE: "4MB"
         GRPC_SERVER_MAX_OUTBOUND_MESSAGE_SIZE: "4MB"
@@ -1068,18 +1058,25 @@ gatewayService:
         initialDelaySeconds: 45
         periodSeconds: 10
         path: "/actuator/health/readiness"
+        httpGet:
+            path: /actuator/health
+            port: 8070 
 
     livenessProbe:
         enabled: true
         initialDelaySeconds: 90
         periodSeconds: 30
-        path: "/actuator/health/liveness"
+        httpGet:
+            path: /actuator/health
+            port: 8070 
 
     startupProbe:
         enabled: true
         initialDelaySeconds: 30
         periodSeconds: 10
-        path: "/actuator/health"
+        httpGet:
+            path: /actuator/health
+            port: 8070  #
         
 
 kafka:
@@ -1153,3 +1150,133 @@ kafka:
       periodSeconds: 10
       timeoutSeconds: 10
       failureThreshold: 3
+
+ingress:
+  enabled: true
+  className: "nginx"
+  
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    
+    nginx.ingress.kubernetes.io/load-balance: "round_robin"
+    
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:3000,http://localhost:4200,http://localhost:8080"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type,Authorization"
+    
+    nginx.ingress.kubernetes.io/enable-gzip: "true"
+  
+  hosts:
+    - host: "barakah-fund.local"
+      paths:
+        - path: "/"
+          pathType: "Prefix"
+          backend:
+            service:
+              name: "barakah-fund-dev-gateway-service"
+              port:
+                number: 8070
+  
+  grpc:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/grpc-backend: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+
+      nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+      nginx.ingress.kubernetes.io/client-max-body-size: "500m"
+      
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+
+      nginx.ingress.kubernetes.io/server-snippet: |
+        grpc_read_timeout 600;
+        grpc_send_timeout 600;
+        client_body_timeout 300;
+        client_header_timeout 60;
+        client_max_body_size 500m;
+        
+        # Large buffer settings
+        large_client_header_buffers 4 32k;
+        client_body_buffer_size 5m;
+      
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
+      nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+      
+    #   nginx.ingress.kubernetes.io/upstream-vhost: "grpc.barakah-fund.local"
+      nginx.ingress.kubernetes.io/load-balance: "round_robin"
+    
+    hosts:
+      - host: "grpc.barakah-fund.local"
+        paths:
+          - path: "/"
+            pathType: "Prefix"
+            backend:
+              service:
+                name: "barakah-fund-dev-gateway-service"
+                port:
+                  number: 9090
+# nginxController:
+#   service:
+#     type: "LoadBalancer"
+#     annotations: {}
+    
+#     externalTrafficPolicy: "Local"
+#     sessionAffinity: "ClientIP"
+    
+#     ports:
+#       http: 80
+  
+#   controller:
+#     config:
+    
+#       ssl-redirect: "false"
+#       ssl-protocols: ""
+#       force-ssl-redirect: "false"
+      
+#       worker-processes: "auto"
+#       worker-connections: "8192"
+
+#       proxy-connect-timeout: "60s"
+#       proxy-send-timeout: "300s"
+#       proxy-read-timeout: "300s" 
+
+#       use-http2: "true"
+#       http2-max-field-size: "8k"
+#       http2-max-header-size: "32k"
+#       http2-max-requests: "1000" 
+      
+#       upstream-keepalive-connections: "32"
+#       upstream-keepalive-timeout: "60s"
+#       upstream-keepalive-requests: "100"
+
+#       enable-gzip: "true"
+#       gzip-types: "application/json,text/css,text/javascript,text/plain"
+      
+
+#       server-tokens: "false"
+
+#       proxy-buffer-size: "64k"
+#       proxy-buffers: "8 64k"
+#       proxy-busy-buffers-size: "128k"
+    
+#     resources:
+#       limits:
+#         cpu: "500m"
+#         memory: "512Mi"
+#       requests:
+#         cpu: "250m"
+#         memory: "256Mi"
+customHeaders:
+  enabled: false

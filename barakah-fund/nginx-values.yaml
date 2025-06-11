@@ -1,0 +1,63 @@
+controller:
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    sessionAffinity: ClientIP
+    ports:
+      http: 80
+  
+  # Fix the progressDeadlineSeconds issue
+  progressDeadlineSeconds: 600
+  
+  config:
+    ssl-redirect: "false"
+    force-ssl-redirect: "false"
+    worker-processes: "auto"
+    worker-connections: "8192"
+    proxy-connect-timeout: "60s"
+    proxy-send-timeout: "600s" 
+    proxy-read-timeout: "600s" 
+    use-http2: "true"
+    
+    client-max-body-size: "500m" 
+    proxy-buffering: "off"
+    proxy-request-buffering: "off"
+    
+
+    large-client-header-buffers: "4 32k"
+    keepalive-requests: "1000"
+
+    upstream-keepalive-connections: "32"
+    upstream-keepalive-timeout: "60s"
+    upstream-keepalive-requests: "100"
+    
+    proxy-buffer-size: "128k"
+    proxy-buffers: "8 128k"
+    proxy-busy-buffers-size: "256k"
+  
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+  
+  admissionWebhooks:
+    enabled: false
+    patch:
+      enabled: false
+  
+  metrics:
+    enabled: true
+  
+  # Add deployment strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  
+  # Ensure proper timing
+  minReadySeconds: 0
+  revisionHistoryLimit: 10
