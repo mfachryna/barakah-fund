@@ -1,0 +1,2832 @@
+{
+	"info": {
+		"_postman_id": "d469e3f4-1ec9-4c5c-8371-1615a1ef24ae",
+		"name": "Barakah Fund Rest",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33589467",
+		"_collection_link": "https://restless-spaceship-987630.postman.co/workspace/Team-Workspace~2b8adfca-6dc9-4dfb-8fdf-262d9c2eed29/collection/33589467-d469e3f4-1ec9-4c5c-8371-1615a1ef24ae?action=share&source=collection_link&creator=33589467"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									"pm.environment.set('token', res.access_token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\": \"dolor123!\",\n    \"username\": \"fachry\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Login Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"dolor123!\",\n    \"username\": \"fachry\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/login",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:33:05 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"access_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI2ODUsImlhdCI6MTc0OTExMjM4NSwianRpIjoiYTNkMjU5M2QtODA2Yi00OGM0LTg1MTctOWU0OGJmYmJkNWE1IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.oAWP5zNid9O7EY0bQszP_EU4uX0DJ3BI59d2eHzoYTp6NEGhaqKH46CCyt45vJjVdF6pMiM5IStOEoWzpMne2SrrRl2LZNTkfrfx2Yk0T4Q1Fb_IwnDhmzHVBG_gdShlNeTFO5lG8IqxyK_rj0E7z9RXT8aUARAHtulUntxnz3WwaQjtf6wCyqMOYO7ebjRsLYeewkgr7cxz4oaACFhl23UO6Y9yUHGjiSRWHuILLCsUQBksx_eIpsVEmJvqKledw7XOH3DJl8Isk__Zme_vkt_vPfUvJJIcmXFo2PzdWcBNTCP8LNEyY3ybVXiDQ9q0XWnkgFs6pz0Z8mjIIDrLXw\",\n    \"refresh_token\": \"eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI2NTg0YmJhZi1lZGI3LTRkYTMtYWNjZS1hZThjYzFlNzk2ZjAifQ.eyJleHAiOjE3NDkxMTQxODUsImlhdCI6MTc0OTExMjM4NSwianRpIjoiY2IzY2I1OWEtZDU0OC00ZDRlLTllZDQtNzk4M2Q0MWJmZDMxIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwic3ViIjoiY2MyM2NlMWUtNzNkMi00NTczLThiYWYtYjI3ZjI4ZDI1ZDMxIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoiYzVlYzk1NjQtMWQyZS00OGUxLWI5NWItN2NjYWFhMTU4NTg2In0.WJHYbxJW9F-3df5qtJM0GtRAGGjy1w6qW4INK9V9WWK27riP-M_zkqx6ciZkzZJ54c_hLEGWnPp94NlvEOj3wA\",\n    \"token_type\": null,\n    \"expires_in\": 300,\n    \"user_info\": {\n        \"user_id\": \"8011283e-879d-4346-81e4-28cd0bc5e4d8\",\n        \"username\": null,\n        \"email\": \"fachry.test@arif.com\",\n        \"first_name\": \"muhammad\",\n        \"last_name\": \"fachry2\",\n        \"phone_number\": \"\",\n        \"date_of_birth\": null,\n        \"address\": \"\",\n        \"status\": \"ACTIVE\",\n        \"created_at\": null,\n        \"updated_at\": null,\n        \"last_login_at\": null\n    },\n    \"issued_at\": null,\n    \"expires_at\": null\n}"
+						}
+					]
+				},
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address\": \"reprehenderit\",\n    \"date_of_birth\": \"04-03-2002\",\n    \"email\": \"fachry.test2@arif3.com\",\n    \"first_name\": \"muhammad\",\n    \"last_name\": \"fachry23\",\n    \"password\": \"dolor123!\",\n    \"phone_number\": \"0853040907028\",\n    \"username\": \"fachry7\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Register Failed With Wrong Field",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": \"reprehenderit\",\n    \"date_of_birth\": \"04-03-2002\",\n    \"email\": \"fachry.test2@arif11.com\",\n    \"first_name\": \"muhammad\",\n    \"last_name\": \"fachry23\",\n    \"password\": \"dolor123!\",\n    \"phone_number\": \"0853040907028\",\n    \"username\": \"fachry11\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/register",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"register"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:33:22 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "close"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:33:22\",\n    \"status\": 400,\n    \"error\": \"Date Parse Error\",\n    \"message\": \"Invalid date/time format: 2002-03-04T00:00\",\n    \"path\": \"/api/v1/auth/register\",\n    \"details\": {\n        \"rejectedValue\": \"2002-03-04T00:00\"\n    }\n}"
+						},
+						{
+							"name": "Register Failed With Already Exist",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": \"reprehenderit\",\n    \"date_of_birth\": \"2002-03-04\",\n    \"email\": \"fachry.test2@arif11.com\",\n    \"first_name\": \"muhammad\",\n    \"last_name\": \"fachry23\",\n    \"password\": \"dolor123!\",\n    \"phone_number\": \"0853040907028\",\n    \"username\": \"fachry11\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/register",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"register"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:33:35 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "close"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:33:35\",\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Username already exists\",\n    \"path\": \"/api/v1/auth/register\",\n    \"grpc_code\": \"FAILED_PRECONDITION\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Validate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI2ODUsImlhdCI6MTc0OTExMjM4NSwianRpIjoiYTNkMjU5M2QtODA2Yi00OGM0LTg1MTctOWU0OGJmYmJkNWE1IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.oAWP5zNid9O7EY0bQszP_EU4uX0DJ3BI59d2eHzoYTp6NEGhaqKH46CCyt45vJjVdF6pMiM5IStOEoWzpMne2SrrRl2LZNTkfrfx2Yk0T4Q1Fb_IwnDhmzHVBG_gdShlNeTFO5lG8IqxyK_rj0E7z9RXT8aUARAHtulUntxnz3WwaQjtf6wCyqMOYO7ebjRsLYeewkgr7cxz4oaACFhl23UO6Y9yUHGjiSRWHuILLCsUQBksx_eIpsVEmJvqKledw7XOH3DJl8Isk__Zme_vkt_vPfUvJJIcmXFo2PzdWcBNTCP8LNEyY3ybVXiDQ9q0XWnkgFs6pz0Z8mjIIDrLXw\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/auth/validate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"validate"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Validate Token Failed With Expired Token",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJiT0RXM2YtcDBDbk10aDVkRjA1WjVNTTVQVWY0SUc5WVlDR0ExZU1yRzkwIn0.eyJleHAiOjE3NDkwMjAxNTAsImlhdCI6MTc0OTAxOTg1MCwianRpIjoiNTM1M2VjZTAtMWI0MS00NjcyLWI2Y2YtMzVkYmYxNTJiZjRjIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjczZGRlODQ3LWZhNjYtNGNkZi04NDE1LTc2M2EwNzg3Y2EyMyIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiIxNmIwMDE5Mi0zZGFjLTQxMTYtOGYyYy0zZGMwYzA1NDRmMWQiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6IjE2YjAwMTkyLTNkYWMtNDExNi04ZjJjLTNkYzBjMDU0NGYxZCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.ckTboiY4ung22OEEmKX0ClHJZUwCr3aGH5kKThv2HhRjArsgAzQNlf-_6XhkprO89IgqDf2WGf2rCUW5_XT18I5IVCM3NTEaDicTvY-irTrHaATKu_Ed9dqszMJbb5QqHA-Q1d50JmrDLlramTelqGIa-KsxvobXnc-GyQlMhKXYGOurTBhuShDgvpgIj5hq5nYd23mJlX4Fx3vw9FX59ubLzd4D8H1DwEANrCMvC_Fxy8fFDfWv11uNra8pfsS8xecCm37aGdgD4U0wtiZr9tnNVW_CVhYMLSGj5FTObyXt0o_kSZnkbDWbqi0rautTRBfdRGO1ddmmhZ5nMEzUJg\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/validate",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"validate"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:34:07 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:34:07\",\n    \"status\": 401,\n    \"error\": \"Unauthorized\",\n    \"message\": \"Token has expired, please login again\",\n    \"path\": \"/api/v1/auth/validate\",\n    \"grpc_code\": \"UNAUTHENTICATED\"\n}"
+						},
+						{
+							"name": "Validate Token Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI2ODUsImlhdCI6MTc0OTExMjM4NSwianRpIjoiYTNkMjU5M2QtODA2Yi00OGM0LTg1MTctOWU0OGJmYmJkNWE1IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.oAWP5zNid9O7EY0bQszP_EU4uX0DJ3BI59d2eHzoYTp6NEGhaqKH46CCyt45vJjVdF6pMiM5IStOEoWzpMne2SrrRl2LZNTkfrfx2Yk0T4Q1Fb_IwnDhmzHVBG_gdShlNeTFO5lG8IqxyK_rj0E7z9RXT8aUARAHtulUntxnz3WwaQjtf6wCyqMOYO7ebjRsLYeewkgr7cxz4oaACFhl23UO6Y9yUHGjiSRWHuILLCsUQBksx_eIpsVEmJvqKledw7XOH3DJl8Isk__Zme_vkt_vPfUvJJIcmXFo2PzdWcBNTCP8LNEyY3ybVXiDQ9q0XWnkgFs6pz0Z8mjIIDrLXw\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/validate",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"validate"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:34:43 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"valid\": true,\n    \"user_id\": \"cc23ce1e-73d2-4573-8baf-b27f28d25d31\",\n    \"username\": \"fachry\",\n    \"email\": \"fachry.test@arif.com\",\n    \"roles\": null,\n    \"permissions\": null,\n    \"issued_at\": null,\n    \"expires_at\": null,\n    \"token_type\": null\n}"
+						}
+					]
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI4MTUsImlhdCI6MTc0OTExMjUxNSwianRpIjoiMzc1NGJmYzItNGJhZS00MjA1LTkxMWEtMGMzZGEwMTdjNTEzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.H-5kIhYOn0j1A4Bf1AmFN5LJ8ffsC0fl61zv8k3NbKwG-vv8OlWN4OiesUEDwWuL99eyKKc7NwVrymZ4djZoKoVQUnSzLdKJia6SkZkQ4ahg4gFJzL_-5yYy6r7-ji6S7eBk9Rl4v-2YDn5Pm1qArMIW3DpX5RB-gJMDpoGbcqiOsMHOLuNnug6i35hl-KsAYvyVEkfqelOC2JVEe5H8OFEOrV4mAmQV4BmCMOnCGh6G3U_yUCvxZNoWbtyW9xCjVkqeHju5Biy8pydT0H7kymcBzdSIPI3Whh3JUokRcGUNeVRDcxBReqyFfycOV_NOt_5EeCxX-Kbfy5jYvnQG6Q\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/auth/refresh",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Refresh Token Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI2NTg0YmJhZi1lZGI3LTRkYTMtYWNjZS1hZThjYzFlNzk2ZjAifQ.eyJleHAiOjE3NDkxMTQxODUsImlhdCI6MTc0OTExMjM4NSwianRpIjoiY2IzY2I1OWEtZDU0OC00ZDRlLTllZDQtNzk4M2Q0MWJmZDMxIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwic3ViIjoiY2MyM2NlMWUtNzNkMi00NTczLThiYWYtYjI3ZjI4ZDI1ZDMxIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoiYzVlYzk1NjQtMWQyZS00OGUxLWI5NWItN2NjYWFhMTU4NTg2In0.WJHYbxJW9F-3df5qtJM0GtRAGGjy1w6qW4INK9V9WWK27riP-M_zkqx6ciZkzZJ54c_hLEGWnPp94NlvEOj3wA\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/refresh",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"refresh"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:35:15 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"access_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI4MTUsImlhdCI6MTc0OTExMjUxNSwianRpIjoiMzc1NGJmYzItNGJhZS00MjA1LTkxMWEtMGMzZGEwMTdjNTEzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.H-5kIhYOn0j1A4Bf1AmFN5LJ8ffsC0fl61zv8k3NbKwG-vv8OlWN4OiesUEDwWuL99eyKKc7NwVrymZ4djZoKoVQUnSzLdKJia6SkZkQ4ahg4gFJzL_-5yYy6r7-ji6S7eBk9Rl4v-2YDn5Pm1qArMIW3DpX5RB-gJMDpoGbcqiOsMHOLuNnug6i35hl-KsAYvyVEkfqelOC2JVEe5H8OFEOrV4mAmQV4BmCMOnCGh6G3U_yUCvxZNoWbtyW9xCjVkqeHju5Biy8pydT0H7kymcBzdSIPI3Whh3JUokRcGUNeVRDcxBReqyFfycOV_NOt_5EeCxX-Kbfy5jYvnQG6Q\",\n    \"refresh_token\": \"eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI2NTg0YmJhZi1lZGI3LTRkYTMtYWNjZS1hZThjYzFlNzk2ZjAifQ.eyJleHAiOjE3NDkxMTQzMTUsImlhdCI6MTc0OTExMjUxNSwianRpIjoiNzM4YzJlNWQtODY3My00ZjNkLTljODgtZWEzYzc1MWVmNTJiIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwic3ViIjoiY2MyM2NlMWUtNzNkMi00NTczLThiYWYtYjI3ZjI4ZDI1ZDMxIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoiYzVlYzk1NjQtMWQyZS00OGUxLWI5NWItN2NjYWFhMTU4NTg2In0.yT25vYXXGj2UGKKFX8_3iylLUq3aZeg0TfsrPwToKFhkj4IVrLfd2i7xi8H2H_vNfHb2Z1k1YO_8rFDsenUutA\",\n    \"token_type\": null,\n    \"expires_in\": 300,\n    \"issued_at\": null,\n    \"expires_at\": null\n}"
+						},
+						{
+							"name": "Refresh Token Failed With Invalid Token",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"refresh_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI4MTUsImlhdCI6MTc0OTExMjUxNSwianRpIjoiMzc1NGJmYzItNGJhZS00MjA1LTkxMWEtMGMzZGEwMTdjNTEzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.H-5kIhYOn0j1A4Bf1AmFN5LJ8ffsC0fl61zv8k3NbKwG-vv8OlWN4OiesUEDwWuL99eyKKc7NwVrymZ4djZoKoVQUnSzLdKJia6SkZkQ4ahg4gFJzL_-5yYy6r7-ji6S7eBk9Rl4v-2YDn5Pm1qArMIW3DpX5RB-gJMDpoGbcqiOsMHOLuNnug6i35hl-KsAYvyVEkfqelOC2JVEe5H8OFEOrV4mAmQV4BmCMOnCGh6G3U_yUCvxZNoWbtyW9xCjVkqeHju5Biy8pydT0H7kymcBzdSIPI3Whh3JUokRcGUNeVRDcxBReqyFfycOV_NOt_5EeCxX-Kbfy5jYvnQG6Q\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/refresh",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"refresh"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:35:32 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:35:32\",\n    \"status\": 401,\n    \"error\": \"Unauthorized\",\n    \"message\": \"Token has expired, please login again\",\n    \"path\": \"/api/v1/auth/refresh\",\n    \"grpc_code\": \"UNAUTHENTICATED\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"access_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI4MTUsImlhdCI6MTc0OTExMjUxNSwianRpIjoiMzc1NGJmYzItNGJhZS00MjA1LTkxMWEtMGMzZGEwMTdjNTEzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.H-5kIhYOn0j1A4Bf1AmFN5LJ8ffsC0fl61zv8k3NbKwG-vv8OlWN4OiesUEDwWuL99eyKKc7NwVrymZ4djZoKoVQUnSzLdKJia6SkZkQ4ahg4gFJzL_-5yYy6r7-ji6S7eBk9Rl4v-2YDn5Pm1qArMIW3DpX5RB-gJMDpoGbcqiOsMHOLuNnug6i35hl-KsAYvyVEkfqelOC2JVEe5H8OFEOrV4mAmQV4BmCMOnCGh6G3U_yUCvxZNoWbtyW9xCjVkqeHju5Biy8pydT0H7kymcBzdSIPI3Whh3JUokRcGUNeVRDcxBReqyFfycOV_NOt_5EeCxX-Kbfy5jYvnQG6Q\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/auth/logout",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Logout Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"access_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJVYkNUUGNDVUJuSDYtZFFMODUtY1dCOHY2XzVkWFByYmVyV05WSTJqOGhZIn0.eyJleHAiOjE3NDkxMTI4MTUsImlhdCI6MTc0OTExMjUxNSwianRpIjoiMzc1NGJmYzItNGJhZS00MjA1LTkxMWEtMGMzZGEwMTdjNTEzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYXJha2FoIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNjMjNjZTFlLTczZDItNDU3My04YmFmLWIyN2YyOGQyNWQzMSIsInR5cCI6IkJlYXJlciIsImF6cCI6InVzZXItc2VydmljZSIsInNlc3Npb25fc3RhdGUiOiJjNWVjOTU2NC0xZDJlLTQ4ZTEtYjk1Yi03Y2NhYWExNTg1ODYiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtYmFyYWthaCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJVU0VSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsInNpZCI6ImM1ZWM5NTY0LTFkMmUtNDhlMS1iOTViLTdjY2FhYTE1ODU4NiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iYXJha2FoIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsIlVTRVIiXSwibmFtZSI6Im11aGFtbWFkIGZhY2hyeTIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJmYWNocnkiLCJnaXZlbl9uYW1lIjoibXVoYW1tYWQiLCJmYW1pbHlfbmFtZSI6ImZhY2hyeTIiLCJlbWFpbCI6ImZhY2hyeS50ZXN0QGFyaWYuY29tIn0.H-5kIhYOn0j1A4Bf1AmFN5LJ8ffsC0fl61zv8k3NbKwG-vv8OlWN4OiesUEDwWuL99eyKKc7NwVrymZ4djZoKoVQUnSzLdKJia6SkZkQ4ahg4gFJzL_-5yYy6r7-ji6S7eBk9Rl4v-2YDn5Pm1qArMIW3DpX5RB-gJMDpoGbcqiOsMHOLuNnug6i35hl-KsAYvyVEkfqelOC2JVEe5H8OFEOrV4mAmQV4BmCMOnCGh6G3U_yUCvxZNoWbtyW9xCjVkqeHju5Biy8pydT0H7kymcBzdSIPI3Whh3JUokRcGUNeVRDcxBReqyFfycOV_NOt_5EeCxX-Kbfy5jYvnQG6Q\"\n\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/auth/logout",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"logout"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:37:32 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Logged out and tokens revoked successfully\",\n    \"success\": true,\n    \"logged_out_at\": null\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Account",
+			"item": [
+				{
+					"name": "Create account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/accounts",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"accounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/accounts",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"accounts"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "List Account Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/accounts",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"accounts"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:37:56 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"content\": [\n        {\n            \"account_id\": \"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60\",\n            \"account_number\": \"SPE17491112425933048\",\n            \"account_type\": \"SPENDING\",\n            \"user_id\": \"cc23ce1e-73d2-4573-8baf-b27f28d25d31\",\n            \"account_name\": \"tempor\",\n            \"balance\": 22110156,\n            \"currency\": \"IDR\",\n            \"status\": \"ACTIVE\",\n            \"created_at\": null,\n            \"updated_at\": null,\n            \"last_transaction_at\": null\n        },\n        {\n            \"account_id\": \"f49b7227-c75e-46b2-b0aa-50724d67ed35\",\n            \"account_number\": \"SAV17491112575441791\",\n            \"account_type\": \"SAVINGS\",\n            \"user_id\": \"cc23ce1e-73d2-4573-8baf-b27f28d25d31\",\n            \"account_name\": \"tempor\",\n            \"balance\": 22110556,\n            \"currency\": \"IDR\",\n            \"status\": \"ACTIVE\",\n            \"created_at\": null,\n            \"updated_at\": null,\n            \"last_transaction_at\": null\n        }\n    ],\n    \"pageable\": {\n        \"page_number\": 0,\n        \"page_size\": 20,\n        \"sort\": {\n            \"empty\": true,\n            \"sorted\": false,\n            \"unsorted\": true\n        },\n        \"offset\": 0,\n        \"paged\": true,\n        \"unpaged\": false\n    },\n    \"last\": true,\n    \"total_elements\": 2,\n    \"total_pages\": 1,\n    \"first\": true,\n    \"size\": 20,\n    \"number\": 0,\n    \"sort\": {\n        \"empty\": true,\n        \"sorted\": false,\n        \"unsorted\": true\n    },\n    \"number_of_elements\": 2,\n    \"empty\": false\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/accounts/6e195123-a6a4-4cd4-aba0-8ff102b44ee5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"6e195123-a6a4-4cd4-aba0-8ff102b44ee5"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Account Failed With Invalid Id",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/accounts/6e195123-a6a4-4cd4-aba0-8ff102b44ee5",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"accounts",
+										"6e195123-a6a4-4cd4-aba0-8ff102b44ee5"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:38:15 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:38:15\",\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Account not found with ID: 6e195123-a6a4-4cd4-aba0-8ff102b44ee5\",\n    \"path\": \"/api/v1/accounts/6e195123-a6a4-4cd4-aba0-8ff102b44ee5\",\n    \"grpc_code\": \"NOT_FOUND\"\n}"
+						},
+						{
+							"name": "Get Account Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/accounts/76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"accounts",
+										"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:38:49 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"account_id\": \"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60\",\n    \"account_number\": \"SPE17491112425933048\",\n    \"account_type\": \"SPENDING\",\n    \"user_id\": \"cc23ce1e-73d2-4573-8baf-b27f28d25d31\",\n    \"account_name\": \"tempor\",\n    \"balance\": 22110156,\n    \"currency\": \"IDR\",\n    \"status\": \"ACTIVE\",\n    \"created_at\": null,\n    \"updated_at\": null,\n    \"last_transaction_at\": null\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Account By Number",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/accounts/SAV17490242782517545/number",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"SAV17490242782517545",
+								"number"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Account Balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/accounts/SAV17490242782517545/balance",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"SAV17490242782517545",
+								"balance"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Account Balance Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/accounts/SPE17491112425933048/balance",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"accounts",
+										"SPE17491112425933048",
+										"balance"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:39:23 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"account_id\": null,\n    \"account_number\": null,\n    \"balance\": 22110156,\n    \"available_balance\": null,\n    \"currency\": null,\n    \"last_updated\": null\n}"
+						},
+						{
+							"name": "Get Account Balance Failed With Invalid Number",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/accounts/SPE1749111242933048/balance",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"accounts",
+										"SPE1749111242933048",
+										"balance"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:39:35 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:39:35\",\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Account not found with account number: SPE1749111242933048\",\n    \"path\": \"/api/v1/accounts/SPE1749111242933048/balance\",\n    \"grpc_code\": \"NOT_FOUND\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Transaction",
+			"item": [
+				{
+					"name": "Create Transaction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": \"100\",\n    \"category_id\": \"76c1bb34-d4f4-4a1c-8567-b2d9b1afe9ce\",\n    \"description\": \"sunt irure pariatur amet est\",\n    \"external_provider\": \"occaecat\",\n    \"external_reference\": \"consectetur aliqua sint\",\n    \"from_account_number\": \"SPE17491112425933048\",\n    \"notes\": \"aliquip\",\n    \"to_account_number\": \"SPE17491112425933048\",\n    \"type\": \"TRANSFER\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/transactions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"transactions"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create Transaction Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": \"100\",\n    \"category_id\": \"76c1bb34-d4f4-4a1c-8567-b2d9b1afe9ce\",\n    \"description\": \"sunt irure pariatur amet est\",\n    \"external_provider\": \"occaecat\",\n    \"external_reference\": \"consectetur aliqua sint\",\n    \"from_account_number\": \"SPE17491112425933048\",\n    \"notes\": \"aliquip\",\n    \"to_account_number\": \"SAV17491112575441791\",\n    \"type\": \"TRANSFER\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/transactions",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:40:11 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"transaction_id\": \"dec1640b-9f7f-4423-86ae-4d48f5dc63b7\",\n    \"transaction_type\": \"TRANSFER\",\n    \"from_account_id\": \"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60\",\n    \"from_account_number\": \"SPE17491112425933048\",\n    \"to_account_id\": \"f49b7227-c75e-46b2-b0aa-50724d67ed35\",\n    \"to_account_number\": \"SAV17491112575441791\",\n    \"amount\": 100,\n    \"currency\": \"IDR\",\n    \"description\": \"sunt irure pariatur amet est\",\n    \"status\": \"COMPLETED\",\n    \"category_id\": \"\",\n    \"category_name\": null,\n    \"balance_before_from\": null,\n    \"balance_after_from\": null,\n    \"balance_before_to\": null,\n    \"balance_after_to\": null,\n    \"created_at\": null,\n    \"processed_at\": null,\n    \"reference\": \"consectetur aliqua sint\",\n    \"notes\": \"aliquip\"\n}"
+						},
+						{
+							"name": "Create Transaction Failed With Same Account",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"amount\": \"100\",\n    \"category_id\": \"76c1bb34-d4f4-4a1c-8567-b2d9b1afe9ce\",\n    \"description\": \"sunt irure pariatur amet est\",\n    \"external_provider\": \"occaecat\",\n    \"external_reference\": \"consectetur aliqua sint\",\n    \"from_account_number\": \"SPE17491112425933048\",\n    \"notes\": \"aliquip\",\n    \"to_account_number\": \"SPE17491112425933048\",\n    \"type\": \"TRANSFER\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/transactions",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:40:30 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "close"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:40:30\",\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"From and to account cannot be the same\",\n    \"path\": \"/api/v1/transactions\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List Transactions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/transactions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"transactions"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Transaction List Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/transactions",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"transactions"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:40:47 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"content\": [\n        {\n            \"transaction_id\": \"dec1640b-9f7f-4423-86ae-4d48f5dc63b7\",\n            \"transaction_type\": \"TRANSFER\",\n            \"from_account_id\": \"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60\",\n            \"from_account_number\": \"SPE17491112425933048\",\n            \"to_account_id\": \"f49b7227-c75e-46b2-b0aa-50724d67ed35\",\n            \"to_account_number\": \"SAV17491112575441791\",\n            \"amount\": 100,\n            \"currency\": \"IDR\",\n            \"description\": \"sunt irure pariatur amet est\",\n            \"status\": \"COMPLETED\",\n            \"category_id\": \"76c1bb34-d4f4-4a1c-8567-b2d9b1afe9ce\",\n            \"category_name\": null,\n            \"balance_before_from\": null,\n            \"balance_after_from\": null,\n            \"balance_before_to\": null,\n            \"balance_after_to\": null,\n            \"created_at\": null,\n            \"processed_at\": null,\n            \"reference\": \"TXN-20250605-154011-8256\",\n            \"notes\": \"aliquip\"\n        },\n        {\n            \"transaction_id\": \"57b06aac-7db4-4a10-99e2-bac224ef10f9\",\n            \"transaction_type\": \"TRANSFER\",\n            \"from_account_id\": \"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60\",\n            \"from_account_number\": \"SPE17491112425933048\",\n            \"to_account_id\": \"f49b7227-c75e-46b2-b0aa-50724d67ed35\",\n            \"to_account_number\": \"SAV17491112575441791\",\n            \"amount\": 100,\n            \"currency\": \"IDR\",\n            \"description\": \"sunt irure pariatur amet est\",\n            \"status\": \"COMPLETED\",\n            \"category_id\": \"76c1bb34-d4f4-4a1c-8567-b2d9b1afe9ce\",\n            \"category_name\": null,\n            \"balance_before_from\": null,\n            \"balance_after_from\": null,\n            \"balance_before_to\": null,\n            \"balance_after_to\": null,\n            \"created_at\": null,\n            \"processed_at\": null,\n            \"reference\": \"TXN-20250605-153018-7257\",\n            \"notes\": \"aliquip\"\n        },\n        {\n            \"transaction_id\": \"72e4eba7-f418-4b00-9812-466f67321483\",\n            \"transaction_type\": \"TRANSFER\",\n            \"from_account_id\": \"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60\",\n            \"from_account_number\": \"SPE17491112425933048\",\n            \"to_account_id\": \"f49b7227-c75e-46b2-b0aa-50724d67ed35\",\n            \"to_account_number\": \"SAV17491112575441791\",\n            \"amount\": 100,\n            \"currency\": \"IDR\",\n            \"description\": \"sunt irure pariatur amet est\",\n            \"status\": \"COMPLETED\",\n            \"category_id\": \"76c1bb34-d4f4-4a1c-8567-b2d9b1afe9ce\",\n            \"category_name\": null,\n            \"balance_before_from\": null,\n            \"balance_after_from\": null,\n            \"balance_before_to\": null,\n            \"balance_after_to\": null,\n            \"created_at\": null,\n            \"processed_at\": null,\n            \"reference\": \"TXN-20250605-153013-6148\",\n            \"notes\": \"aliquip\"\n        }\n    ],\n    \"pageable\": {\n        \"page_number\": 0,\n        \"page_size\": 20,\n        \"sort\": {\n            \"empty\": true,\n            \"sorted\": false,\n            \"unsorted\": true\n        },\n        \"offset\": 0,\n        \"paged\": true,\n        \"unpaged\": false\n    },\n    \"last\": true,\n    \"total_elements\": 3,\n    \"total_pages\": 1,\n    \"first\": true,\n    \"size\": 20,\n    \"number\": 0,\n    \"sort\": {\n        \"empty\": true,\n        \"sorted\": false,\n        \"unsorted\": true\n    },\n    \"number_of_elements\": 3,\n    \"empty\": false\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Transactions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/transactions/cefefeb8-383e-4af9-a749-deb0c6f1cbe9",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"transactions",
+								"cefefeb8-383e-4af9-a749-deb0c6f1cbe9"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Transaction Failed With Wrong Transaction ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/transactions/cefefeb8-383e-4af9-a749-deb0c6f1cbe9",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"cefefeb8-383e-4af9-a749-deb0c6f1cbe9"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:41:04 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:41:04\",\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Transaction not found: cefefeb8-383e-4af9-a749-deb0c6f1cbe9\",\n    \"path\": \"/api/v1/transactions/cefefeb8-383e-4af9-a749-deb0c6f1cbe9\",\n    \"grpc_code\": \"NOT_FOUND\"\n}"
+						},
+						{
+							"name": "Get Transactions Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/transactions/dec1640b-9f7f-4423-86ae-4d48f5dc63b7",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"transactions",
+										"dec1640b-9f7f-4423-86ae-4d48f5dc63b7"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:41:38 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"transaction_id\": \"dec1640b-9f7f-4423-86ae-4d48f5dc63b7\",\n    \"transaction_type\": \"TRANSFER\",\n    \"from_account_id\": \"76ddc7a3-c7e8-4dbc-b701-1e6c72e23c60\",\n    \"from_account_number\": \"SPE17491112425933048\",\n    \"to_account_id\": \"f49b7227-c75e-46b2-b0aa-50724d67ed35\",\n    \"to_account_number\": \"SAV17491112575441791\",\n    \"amount\": 100,\n    \"currency\": \"IDR\",\n    \"description\": \"sunt irure pariatur amet est\",\n    \"status\": \"COMPLETED\",\n    \"category_id\": \"76c1bb34-d4f4-4a1c-8567-b2d9b1afe9ce\",\n    \"category_name\": null,\n    \"balance_before_from\": null,\n    \"balance_after_from\": null,\n    \"balance_before_to\": null,\n    \"balance_after_to\": null,\n    \"created_at\": null,\n    \"processed_at\": null,\n    \"reference\": \"TXN-20250605-154011-8256\",\n    \"notes\": \"aliquip\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Transaction Logs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/accounts/cefefeb8-383e-4af9-a749-deb0c6f1cbe9/number",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"cefefeb8-383e-4af9-a749-deb0c6f1cbe9",
+								"number"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Account Balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/accounts/SAV17490242782517545/balance",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"SAV17490242782517545",
+								"balance"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Account Balance Failed With Wrong Account",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/accounts/SAV17490242782517545/balance",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"accounts",
+										"SAV17490242782517545",
+										"balance"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:43:10 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"timestamp\": \"2025-06-05 15:43:10\",\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Account not found with account number: SAV17490242782517545\",\n    \"path\": \"/api/v1/accounts/SAV17490242782517545/balance\",\n    \"grpc_code\": \"NOT_FOUND\"\n}"
+						},
+						{
+							"name": "Get Account Balance Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"account_name\": \"tempor\",\n    \"account_type\": \"SPENDING\",\n    \"initial_deposit\": 22110356,\n    \"user_id\": \"dolore ad sed Ut magna\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8070/api/v1/accounts/SPE17491112425933048/balance",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8070",
+									"path": [
+										"api",
+										"v1",
+										"accounts",
+										"SPE17491112425933048",
+										"balance"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 05 Jun 2025 08:43:49 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"account_id\": null,\n    \"account_number\": null,\n    \"balance\": 22110156,\n    \"available_balance\": null,\n    \"currency\": null,\n    \"last_updated\": null\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Transaction Categories",
+			"item": [
+				{
+					"name": "Get Categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"page_request\": {\n        \"direction\": \"enim cupidatat in\",\n        \"page\": 1,\n        \"size\": 10,\n        \"sort\": \"\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/transactions/categories?include_system=true&page=10&size=10",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"transactions",
+								"categories"
+							],
+							"query": [
+								{
+									"key": "include_system",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "10"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories Detail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"page_request\": {\n        \"direction\": \"enim cupidatat in\",\n        \"page\": 1,\n        \"size\": 10,\n        \"sort\": \"\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8070/api/v1/transactions/categories/1ba59a63-fc4d-4186-8d7f-fee3b68335c2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8070",
+							"path": [
+								"api",
+								"v1",
+								"transactions",
+								"categories",
+								"1ba59a63-fc4d-4186-8d7f-fee3b68335c2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
